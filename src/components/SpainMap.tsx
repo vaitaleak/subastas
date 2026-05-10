@@ -8,7 +8,7 @@ interface SpainMapProps {
 }
 
 const PROVINCE_PATHS: Record<string, string> = {
-    'Albacete': 'M226.9,163.9L227.3,165.0L228.7,165.1L232.6,175.6L241.6,180.8L241.9,187.0L233.0,185.7L227.7,190.7L224.9,198.9L219.3,197.7L212.6,199.7L204.5,207.3L201.7,200.6L197.6,193.0L193.4,189.6L193.9,184.3L191.9,174.7L196.8,166.4L205.6,170.0L212.5,166.5L226.9,163.9Z',
+'Albacete': 'M226.9,163.9L227.3,165.0L228.7,165.1L232.6,175.6L241.6,180.8L241.9,187.0L233.0,185.7L227.7,190.7L224.9,198.9L219.3,197.7L212.6,199.7L204.5,207.3L201.7,200.6L197.6,193.0L193.4,189.6L193.9,184.3L191.9,174.7L196.8,166.4L205.6,170.0L212.5,166.5L226.9,163.9Z',
     'Alicante': 'M261.9,181.0L265.2,181.9L269.4,182.1L271.1,184.6L272.3,185.7L268.0,188.7L265.7,189.3L262.1,192.2L254.3,197.7L249.4,204.6L247.0,212.2L244.1,213.7L239.9,203.0L237.3,197.6L239.0,192.6L241.9,187.0L243.3,184.6L249.1,186.0L252.1,184.8L255.4,182.4L261.9,181.0Z',
     'Almería': 'M208.4,212.6L212.6,213.6L213.3,218.1L217.3,226.9L221.7,230.2L219.2,233.7L215.8,241.9L213.2,246.6L209.9,250.1L200.7,246.7L194.7,251.7L188.8,249.5L184.9,244.1L187.4,242.2L188.7,236.5L193.2,234.2L195.9,230.5L201.2,225.1L203.5,222.5L205.9,216.6L208.4,212.6Z',
     'Asturias': 'M111.7,27.7L117.6,30.9L135.9,34.0L146.6,39.9L137.3,41.6L124.2,45.9L109.8,49.1L101.5,48.6L94.9,49.2L85.4,51.6L81.9,47.1L82.2,44.5L79.5,39.1L79.8,33.6L83.4,30.7L90.9,30.5L95.8,30.9L99.6,30.6L103.4,30.6L105.5,30.6L111.7,27.7Z',
@@ -62,7 +62,7 @@ const PROVINCE_PATHS: Record<string, string> = {
 const BALEARES_PATH = 'M351.0,146.5L347.5,148.3L350.6,149.6L354.6,151.9L357.4,154.6L355.5,158.3L352.4,163.6L349.9,166.8L345.0,167.1L338.5,164.2L335.3,159.6L334.7,159.8L333.9,160.3L331.0,161.1L329.2,160.2L331.1,156.4L337.3,151.9L344.9,148.1L351.0,146.5Z';
 
 const CENTROIDS: Record<string, { x: number; y: number }> = {
-    'Albacete': { x: 215.8, y: 182.9 },
+'Albacete': { x: 215.8, y: 182.9 },
     'Alicante': { x: 256.6, y: 196.3 },
     'Almería': { x: 216.0, y: 234.3 },
     'Asturias': { x: 100.9, y: 31.2 },
@@ -131,7 +131,7 @@ export default function SpainMap({ auctionCounts }: SpainMapProps) {
     return '#3b0764';
   };
 
-  const getStrokeColor = (count: number) => {
+  const getStroke = (count: number) => {
     if (count === 0) return '#334155';
     const r = count / maxCount;
     if (r > 0.6) return '#a78bfa';
@@ -141,20 +141,16 @@ export default function SpainMap({ auctionCounts }: SpainMapProps) {
 
   return (
     <div className="relative w-full max-w-2xl mx-auto">
-      <svg viewBox="0 0 400 300" className="w-full" style={ minHeight: '240px' }>
-        {/* Mainland provinces */}
+      <svg viewBox="0 0 400 300" className="w-full" style={{ minHeight: '240px' }}>
         {Object.entries(PROVINCE_PATHS).map(([name, path]) => {
           const count = auctionCounts[name] || 0;
           const isH = hovered === name;
-          const fill = isH ? getStrokeColor(count) : getColor(count);
-          const stroke = isH ? '#e2e8f0' : getStrokeColor(count);
-          
           return (
             <path
               key={name}
               d={path}
-              fill={fill}
-              stroke={stroke}
+              fill={isH ? getStroke(count) : getColor(count)}
+              stroke={isH ? '#e2e8f0' : getStroke(count)}
               strokeWidth={isH ? 1.5 : 0.5}
               style={{ cursor: 'pointer', transition: 'fill 0.15s, stroke 0.15s' }}
               onClick={() => router.push(`/buscar?provincia=${encodeURIComponent(name)}`)}
@@ -164,15 +160,14 @@ export default function SpainMap({ auctionCounts }: SpainMapProps) {
           );
         })}
 
-        {/* Baleares */}
         {(() => {
           const count = auctionCounts['Baleares'] || 0;
           const isH = hovered === 'Baleares';
           return (
             <path
               d={BALEARES_PATH}
-              fill={isH ? getStrokeColor(count) : getColor(count)}
-              stroke={isH ? '#e2e8f0' : getStrokeColor(count)}
+              fill={isH ? getStroke(count) : getColor(count)}
+              stroke={isH ? '#e2e8f0' : getStroke(count)}
               strokeWidth={isH ? 1.5 : 0.5}
               style={{ cursor: 'pointer', transition: 'fill 0.15s' }}
               onClick={() => router.push('/buscar?provincia=Baleares')}
@@ -182,11 +177,9 @@ export default function SpainMap({ auctionCounts }: SpainMapProps) {
           );
         })()}
 
-        {/* Canary Islands inset border */}
         <rect x="48" y="255" width="65" height="38" rx="3" fill="none" stroke="#334155" strokeWidth="0.5" strokeDasharray="3,2" />
         <text x="80" y="253" textAnchor="middle" fill="#475569" fontSize="6">Canarias</text>
 
-        {/* Tooltip */}
         {hovered && CENTROIDS[hovered] && (() => {
           const c = CENTROIDS[hovered];
           const count = auctionCounts[hovered] || 0;
