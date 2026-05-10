@@ -336,16 +336,16 @@ def main():
     boe_auctions = scrape_boe()
     ss_auctions = scrape_seguridad_social()
 
-    all_auctions = boe_auctions + ss_auctions
-
-    # If BOE returned 0 (nothing at all), keep old BOE data
-    if len(boe_auctions) == 0 and DATA_PATH.exists():
+    # If SS returned 0, keep existing SS data from old file
+    if len(ss_auctions) == 0 and DATA_PATH.exists():
         with open(DATA_PATH, encoding="utf-8") as f:
             old = json.load(f)
-        old_boe = [a for a in old.get("auctions", []) if a.get("source") != "seguridad_social"]
-        if old_boe:
-            print(f"  Keeping {len(old_boe)} old BOE auctions (BOE returned 0)")
-            all_auctions = old_boe + ss_auctions
+        old_ss = [a for a in old.get("auctions", []) if a.get("source") == "seguridad_social"]
+        if old_ss:
+            print(f"  Keeping {len(old_ss)} existing SS auctions (scrape returned 0)")
+            ss_auctions = old_ss
+
+    all_auctions = boe_auctions + ss_auctions
 
     for i, a in enumerate(all_auctions):
         a["id"] = i + 1
