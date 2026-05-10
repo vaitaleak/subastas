@@ -2,11 +2,13 @@
 """
 Scraper de subastas publicas de Espana.
 Fuentes:
-  1. BOE (SUB-JA, SUB-JV, SUB-RC) - subastas.boe.es - refresh existing IDs
-  2. Seguridad Social (TGSS) - w6.seg-social.es/subastas - full scrape
+  1. BOE (SUB-JA, SUB-JV, SUB-RC) - subastas.boe.es
+  2. Seguridad Social (TGSS) - w6.seg-social.es/subastas
 
-Estrategia BOE: el search esta bloqueado asi que refrescamos los IDs que ya tenemos
-+ probeamos IDs nuevos secuenciales.
+Estrategia BOE: el search esta bloqueado asi que:
+  - Mantenemos los IDs existentes sin re-validar (asumimos activos)
+  - Probeamos solo ~60 IDs nuevos secuenciales
+  - Cada dia se anaden unos pocos nuevos
 Estrategia SS: scrape completo via curl --next (sesiones con cookies).
 """
 import re, html, json, time, sys, subprocess
@@ -18,7 +20,6 @@ DATA_PATH = REPO_ROOT / "public" / "data.json"
 
 
 def curl(args, timeout=20):
-    """Run curl and return stdout."""
     r = subprocess.run(
         ["curl", "-sL", "--max-time", str(timeout), "-k"] + args,
         capture_output=True, text=True, timeout=timeout + 5, errors="replace"
@@ -27,7 +28,6 @@ def curl(args, timeout=20):
 
 
 def parse_price_text(text):
-    """Parse Spanish price: 138.757,82"""
     text = re.sub(r"<[^>]+>", "", text).strip()
     text = html.unescape(text).replace("\xa0", "").strip()
     text = text.replace("&euro;", "").replace("\u20ac", "").strip()
@@ -58,7 +58,6 @@ def norm_prov(name):
     for k, v in PROV_NORM.items():
         if k in name:
             return v
-    # Title case
     return " ".join(w.capitalize() for w in name.split())
 
 
@@ -73,74 +72,66 @@ def decode_html(obj):
 
 
 # ============================================================
-# BOE SCRAPER - refresh existing + probe new
+# BOE SCRAPER - keep existing + probe new
 # ============================================================
 def scrape_boe():
     print("=== Scraping BOE ===")
 
-    # Load existing BOE IDs
+    # Load existing BOE auctions
+    existing_auctions = []
     existing_ids = set()
     if DATA_PATH.exists():
         with open(DATA_PATH, encoding="utf-8") as f:
             old = json.load(f)
         for a in old.get("auctions", []):
             if a.get("source") != "seguridad_social":
+                existing_auctions.append(a)
                 sid = a.get("source_id", "")
                 if sid and "-" in sid:
                     existing_ids.add(sid)
 
-    print(f"  Existing BOE IDs: {len(existing_ids)}")
+    print(f"  Existing BOE auctions: {len(existing_auctions)}")
 
-    # Only probe +/-2 around highest known IDs per prefix (not all)
-    ranges_to_probe = set()
-    for sid in existing_ids:
-        m = re.match(r"(SUB-[A-Z]+-\d+)-(\d+)", sid)
-        if m:
-            prefix = m.group(1)
-            num = int(m.group(2))
-            for offset in [-2, -1, 1, 2]:
-                ranges_to_probe.add(f"{prefix}-{num + offset:06d}")
-
-    # Small sequential probe around highest known ID
+    # Only probe NEW sequential IDs (not existing ones)
     import datetime as dt
     year = dt.datetime.now().year
-    ja_nums = []
-    rc_nums = []
-    for sid in existing_ids:
-        m_ja = re.match(r"SUB-JA-\d+-(\d+)", sid)
-        if m_ja:
-            ja_nums.append(int(m_ja.group(1)))
-        m_rc = re.match(r"SUB-RC-\d+-(\d+)", sid)
-        if m_rc:
-            rc_nums.append(int(m_rc.group(1)))
+
+    ja_nums = [int(m.group(1)) for sid in existing_ids
+               if (m := re.match(r"SUB-JA-\d+-(\d+)", sid))]
+    rc_nums = [int(m.group(1)) for sid in existing_ids
+               if (m := re.match(r"SUB-RC-\d+-(\d+)", sid))]
+    jv_nums = [int(m.group(1)) for sid in existing_ids
+               if (m := re.match(r"SUB-JV-\d+-(\d+)", sid))]
+
     max_ja = max(ja_nums) if ja_nums else 262000
-    for num in range(max_ja - 5, max_ja + 50):
-        ranges_to_probe.add(f"SUB-JA-{year}-{num:06d}")
     max_rc = max(rc_nums) if rc_nums else 100
-    for num in range(max_rc - 5, max_rc + 20):
-        ranges_to_probe.add(f"SUB-RC-{year}-{num:06d}")
+    max_jv = max(jv_nums) if jv_nums else 262000
 
-    all_probe_ids = existing_ids | ranges_to_probe
-    print(f"  Total IDs to probe: {len(all_probe_ids)} (existing: {len(existing_ids)}, new probes: {len(ranges_to_probe)})")
+    # Probe 30 sequential IDs after the max known
+    new_ids_to_probe = set()
+    for num in range(max_ja + 1, max_ja + 31):
+        new_ids_to_probe.add(f"SUB-JA-{year}-{num:06d}")
+    for num in range(max_rc + 1, max_rc + 11):
+        new_ids_to_probe.add(f"SUB-RC-{year}-{num:06d}")
+    for num in range(max_jv + 1, max_jv + 11):
+        new_ids_to_probe.add(f"SUB-JV-{year}-{num:06d}")
 
-    # Probe detail pages
-    auctions = []
-    checked = 0
-    for sid in sorted(all_probe_ids):
-        checked += 1
-        if checked % 100 == 0:
-            print(f"  Probed {checked}/{len(all_probe_ids)}, found {len(auctions)} auctions")
-            time.sleep(1)
+    # Remove IDs we already have
+    new_ids_to_probe -= existing_ids
+    print(f"  New IDs to probe: {len(new_ids_to_probe)}")
 
+    # Probe each new ID
+    new_auctions = []
+    for sid in sorted(new_ids_to_probe):
         d1 = curl([f"https://subastas.boe.es/detalleSubasta.php?idSub={sid}&ver=1"], timeout=8)
         if "no existe" in d1.lower() or len(d1) < 3000:
             continue
 
-        # This auction exists! Get details (skip ver=2 to save time)
+        print(f"  Found new: {sid}")
         d3 = curl([f"https://subastas.boe.es/detalleSubasta.php?idSub={sid}&ver=3"], timeout=8)
         d2 = curl([f"https://subastas.boe.es/detalleSubasta.php?idSub={sid}&ver=2"], timeout=8)
 
-        # Price
+        # Parse price
         valor = re.search(r"Valor subasta[^0-9]*([\d.,]+)\s*(?:\u20ac|&#x20AC;)", d1)
         if not valor:
             valor = re.search(r"Tasaci[\xf3o]n[^0-9]*([\d.,]+)\s*(?:\u20ac|&#x20AC;)", d1)
@@ -151,10 +142,9 @@ def scrape_boe():
             except:
                 pass
 
-        # Bienes (ver=3)
+        # Parse bienes
         text3 = html.unescape(re.sub(r"<[^>]+>", " | ", d3))
         text3 = re.sub(r"\s+", " ", text3)
-
         tipo_m = re.search(r"Bien \d+\s*-\s*(?:Inmueble|Mueble|Derecho)[^)]*\(([^)]+)\)", text3)
         tipo = tipo_m.group(1).strip() if tipo_m else "Otro"
         prov_m = re.search(r"Provincia\s*\|\s*\|\s*([^|]+)", text3)
@@ -164,7 +154,7 @@ def scrape_boe():
         loc_m = re.search(r"Localidad\s*\|\s*\|\s*([^|]+)", text3)
         loc = loc_m.group(1).strip() if loc_m else prov
 
-        # Authority (ver=2)
+        # Authority
         text2 = html.unescape(re.sub(r"<[^>]+>", " | ", d2))
         text2 = re.sub(r"\s+", " ", text2)
         auth_m = re.search(r"Descripci[\xf3o]n\s*\|\s*\|\s*([^|]+)", text2)
@@ -196,10 +186,10 @@ def scrape_boe():
             tipo = "Otro"
         if tipo == "Local comercial":
             tipo = "Local"
-        if tipo == "Veh\u00edculo" or "Veh" in t:
+        if "Veh" in t:
             tipo = "Veh\u00edculo"
 
-        auctions.append({
+        new_auctions.append({
             "tipo_bien": tipo,
             "provincia": norm_prov(html.unescape(prov)),
             "localidad": html.unescape(loc) or html.unescape(prov),
@@ -218,8 +208,9 @@ def scrape_boe():
             "municipio": html.unescape(loc) or html.unescape(prov),
         })
 
-    print(f"  BOE: {len(auctions)} active auctions")
-    return auctions
+    print(f"  New BOE auctions found: {len(new_auctions)}")
+    print(f"  Total BOE: {len(existing_auctions) + len(new_auctions)}")
+    return existing_auctions + new_auctions
 
 
 # ============================================================
@@ -346,19 +337,18 @@ def main():
 
     all_auctions = boe_auctions + ss_auctions
 
-    # If BOE returned 0 (search blocked + existing expired), keep old BOE data
+    # If BOE returned 0 (nothing at all), keep old BOE data
     if len(boe_auctions) == 0 and DATA_PATH.exists():
         with open(DATA_PATH, encoding="utf-8") as f:
             old = json.load(f)
         old_boe = [a for a in old.get("auctions", []) if a.get("source") != "seguridad_social"]
         if old_boe:
-            print(f"  Keeping {len(old_boe)} old BOE auctions (BOE search blocked)")
+            print(f"  Keeping {len(old_boe)} old BOE auctions (BOE returned 0)")
             all_auctions = old_boe + ss_auctions
 
     for i, a in enumerate(all_auctions):
         a["id"] = i + 1
 
-    # Deep decode
     all_auctions = decode_html(all_auctions)
 
     # Fix tipo consistency
@@ -380,11 +370,9 @@ def main():
             a["provincia"] = "Castell\u00f3n"
 
     sources = {}
-    types = {}
     provs = set()
     for a in all_auctions:
         sources[a["source"]] = sources.get(a["source"], 0) + 1
-        types[a["tipo_bien"]] = types.get(a["tipo_bien"], 0) + 1
         if a.get("provincia"):
             provs.add(a["provincia"])
 
@@ -393,7 +381,7 @@ def main():
         "stats": {
             "totalActive": len(all_auctions),
             "totalProvinces": len(provs),
-            "newToday": 0,
+            "newToday": len([a for a in all_auctions if a.get("source_id", "").startswith("SS-")]),
             "lastUpdated": datetime.now().isoformat(),
         },
         "provincias": sorted(provs),
