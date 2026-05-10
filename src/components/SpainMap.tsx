@@ -49,7 +49,6 @@ const PROVINCE_CENTERS: Record<string, { x: number; y: number; name: string }> =
   'Segovia': { x: 180, y: 128, name: 'Segovia' },
   'Ávila': { x: 172, y: 140, name: 'Ávila' },
   'León': { x: 140, y: 100, name: 'León' },
-  'Zamora': { x: 148, y: 120, name: 'Zamora' },
   'Huelva': { x: 135, y: 205, name: 'Huelva' },
   'Sevilla': { x: 155, y: 200, name: 'Sevilla' },
   'Cádiz': { x: 148, y: 225, name: 'Cádiz' },
