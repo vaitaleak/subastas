@@ -102,7 +102,7 @@ interface AuctionMapProps {
 export default function AuctionMap({ auctions }: AuctionMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
-  const clusterGroupRef = useRef<anyGroup | null>(null);
+  const clusterGroupRef = useRef<any | null>(null);
 
   // Compute marker data
   const markers = useMemo(() => {
@@ -144,7 +144,7 @@ export default function AuctionMap({ auctions }: AuctionMapProps) {
         spiderfyOnMaxZoom: true,
         showCoverageOnHover: false,
         iconCreateFunction: createClusterIcon,
-      }) as anyGroup;
+      }) as any;
 
       clusterGroupRef.current = clusterGroup;
       map.addLayer(clusterGroup);
