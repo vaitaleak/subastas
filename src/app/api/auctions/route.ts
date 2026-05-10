@@ -1,68 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuctions, getAuctionById, searchAuctions } from '@/lib/db';
-import type { AuctionFilters } from '@/lib/types';
+import { getDemoAuctions } from '@/lib/demo-data';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = request.nextUrl;
+    const filters: Record<string, string> = {};
 
-    // Check if looking for a single auction by ID
-    const idParam = searchParams.get('id');
-    if (idParam) {
-      const id = parseInt(idParam, 10);
-      if (isNaN(id)) {
-        return NextResponse.json({ error: 'Invalid id parameter' }, { status: 400 });
-      }
-      const auction = getAuctionById(id);
-      if (!auction) {
-        return NextResponse.json({ error: 'Auction not found' }, { status: 404 });
-      }
-      return NextResponse.json({ auction });
-    }
+    if (searchParams.get('provincia')) filters.provincia = searchParams.get('provincia')!;
+    if (searchParams.get('tipo_bien')) filters.tipo_bien = searchParams.get('tipo_bien')!;
+    if (searchParams.get('source')) filters.source = searchParams.get('source')!;
+    if (searchParams.get('estado')) filters.estado = searchParams.get('estado')!;
+    if (searchParams.get('precio_min')) filters.precio_min = searchParams.get('precio_min')!;
+    if (searchParams.get('precio_max')) filters.precio_max = searchParams.get('precio_max')!;
+    if (searchParams.get('query')) filters.query = searchParams.get('query')!;
+    if (searchParams.get('sort')) filters.sort = searchParams.get('sort')!;
+    if (searchParams.get('page')) filters.page = searchParams.get('page')!;
 
-    // Build filters
-    const filters: AuctionFilters = {
-      provincia: searchParams.get('provincia') || undefined,
-      tipo_bien: searchParams.get('tipo_bien') || undefined,
-      precio_min: searchParams.get('precio_min') ? parseFloat(searchParams.get('precio_min')!) : undefined,
-      precio_max: searchParams.get('precio_max') ? parseFloat(searchParams.get('precio_max')!) : undefined,
-      query: searchParams.get('query') || undefined,
-      source: (searchParams.get('source') as AuctionFilters['source']) || undefined,
-      estado: searchParams.get('estado') || undefined,
-      page: parseInt(searchParams.get('page') || '1', 10),
-      limit: Math.min(parseInt(searchParams.get('limit') || '20', 10), 100),
-      sort: searchParams.get('sort') || undefined,
-    };
+    const result = getDemoAuctions(filters);
+    const page = Number(filters.page || '1');
+    const totalPages = Math.ceil(result.total / 20);
 
-    // Validate numeric params
-    if (filters.precio_min !== undefined && isNaN(filters.precio_min)) {
-      return NextResponse.json({ error: 'Invalid precio_min' }, { status: 400 });
-    }
-    if (filters.precio_max !== undefined && isNaN(filters.precio_max)) {
-      return NextResponse.json({ error: 'Invalid precio_max' }, { status: 400 });
-    }
-    if (filters.page !== undefined && (isNaN(filters.page) || filters.page < 1)) {
-      return NextResponse.json({ error: 'Invalid page' }, { status: 400 });
-    }
-
-    const result = getAuctions(filters);
-
+    // Return format expected by frontend: { auctions, total, page, totalPages }
     return NextResponse.json({
       auctions: result.auctions,
-      pagination: {
-        total: result.total,
-        page: result.page,
-        totalPages: result.totalPages,
-        limit: filters.limit,
-      },
+      total: result.total,
+      page,
+      totalPages,
     });
   } catch (err: any) {
     console.error('[API /auctions] Error:', err);
-    return NextResponse.json(
-      { error: 'Failed to fetch auctions', message: err.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch auctions', message: err.message }, { status: 500 });
   }
 }

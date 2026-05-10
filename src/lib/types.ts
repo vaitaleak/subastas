@@ -1,7 +1,8 @@
 export interface Auction {
-  id: string;
+  id: number;
   source: string;
   source_id: string;
+  titulo?: string;
   tipo_bien: string;
   provincia: string;
   municipio: string;

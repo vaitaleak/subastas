@@ -7,6 +7,25 @@ import { getAuctionCoordinates } from '@/lib/geocode';
 import { formatPrice } from '@/lib/utils';
 import type { Auction } from '@/lib/types';
 
+// Load Leaflet CSS dynamically
+if (typeof window !== 'undefined' && !document.getElementById('leaflet-css')) {
+  const link = document.createElement('link');
+  link.id = 'leaflet-css';
+  link.rel = 'stylesheet';
+  link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+  document.head.appendChild(link);
+  const link2 = document.createElement('link');
+  link2.id = 'leaflet-cluster-css';
+  link2.rel = 'stylesheet';
+  link2.href = 'https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css';
+  document.head.appendChild(link2);
+  const link3 = document.createElement('link');
+  link3.id = 'leaflet-cluster-css2';
+  link3.rel = 'stylesheet';
+  link3.href = 'https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css';
+  document.head.appendChild(link3);
+}
+
 // Fix leaflet default marker icon issue with bundlers
 const DEFAULT_ICON = L.divIcon({
   html: '',
