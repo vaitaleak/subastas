@@ -217,32 +217,52 @@ def scrape_boe():
 # SEGURIDAD SOCIAL SCRAPER
 # ============================================================
 def scrape_seguridad_social():
+    """Scrape SS using urllib with cookie jar (works on GitHub Actions)."""
     print("=== Scraping Seguridad Social ===")
+    import ssl
+    from urllib.request import build_opener, HTTPCookieProcessor, Request
+    from urllib.parse import urlencode
+    from http.cookiejar import MozillaCookieJar
+
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+
+    cj = MozillaCookieJar("/tmp/ss_cookies_gh.txt")
+    opener = build_opener(HTTPCookieProcessor(cj))
 
     all_ss = []
 
     for page in range(1, 50):
-        sf = f"/tmp/ss_gh{page}.txt"
+        try:
+            # Step 1: Init session
+            req1 = Request("https://w6.seg-social.es/subastas/SubaSeControladorInter?opcion=3&avanzada=0",
+                           headers={"User-Agent": "Mozilla/5.0"})
+            opener.open(req1, timeout=15, context=ctx)
 
-        cmd = (
-            f'curl -sL --max-time 30 -k '
-            f'-c "{sf}" '
-            f'"https://w6.seg-social.es/subastas/SubaSeControladorInter?opcion=3&avanzada=0" '
-            f'--next -sL --max-time 15 -k '
-            f'-b "{sf}" -c "{sf}" '
-            f'-d "opcion=10&EMB_TIPOBIEN=0101&EMB_TIPOBIEN=0102&EMB_TIPOBIEN=0211" '
-            f'"https://w6.seg-social.es/subastas/SubaSeControladorInter" '
-            f'--next -sL --max-time 20 -k '
-            f'-b "{sf}" -c "{sf}" '
-            f'"https://w6.seg-social.es/subastas/SubaSeControladorInter?pagina={page}&opcion=8&tipoOperacion=1"'
-        )
+            # Step 2: Submit type selection
+            post_data = urlencode({"opcion": "10", "EMB_TIPOBIEN": ["0101", "0102", "0211"]}).encode()
+            req2 = Request("https://w6.seg-social.es/subastas/SubaSeControladorInter",
+                           data=post_data,
+                           headers={"User-Agent": "Mozilla/5.0", "Content-Type": "application/x-www-form-urlencoded"})
+            opener.open(req2, timeout=15, context=ctx)
 
-        r = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=60, errors="replace")
-        content = r.stdout
+            # Step 3: Get page N
+            req3 = Request(f"https://w6.seg-social.es/subastas/SubaSeControladorInter?pagina={page}&opcion=8&tipoOperacion=1",
+                           headers={"User-Agent": "Mozilla/5.0"})
+            resp3 = opener.open(req3, timeout=20, context=ctx)
+            charset = resp3.headers.get_content_charset() or "utf-8"
+            content = resp3.read().decode(charset, errors="replace")
+
+        except Exception as e:
+            if page == 1:
+                print(f"  WARNING: SS page 1 failed: {e}")
+                return []
+            break
 
         if len(content) < 3000 or "<caption>" not in content:
             if page == 1:
-                print("  WARNING: Could not get SS page 1, skipping SS")
+                print("  WARNING: SS page 1 has no data")
                 return []
             break
 
