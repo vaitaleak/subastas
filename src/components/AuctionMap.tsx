@@ -70,7 +70,7 @@ function createMarkerIcon(tipo: string): L.DivIcon {
   });
 }
 
-function createClusterIcon(cluster: L.MarkerCluster): L.DivIcon {
+function createClusterIcon(cluster: any): L.DivIcon {
   const count = cluster.getChildCount();
   const size = count > 100 ? 48 : count > 50 ? 40 : count > 20 ? 36 : 32;
   return L.divIcon({
@@ -102,7 +102,7 @@ interface AuctionMapProps {
 export default function AuctionMap({ auctions }: AuctionMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
-  const clusterGroupRef = useRef<L.MarkerClusterGroup | null>(null);
+  const clusterGroupRef = useRef<anyGroup | null>(null);
 
   // Compute marker data
   const markers = useMemo(() => {
@@ -144,7 +144,7 @@ export default function AuctionMap({ auctions }: AuctionMapProps) {
         spiderfyOnMaxZoom: true,
         showCoverageOnHover: false,
         iconCreateFunction: createClusterIcon,
-      }) as L.MarkerClusterGroup;
+      }) as anyGroup;
 
       clusterGroupRef.current = clusterGroup;
       map.addLayer(clusterGroup);
