@@ -224,20 +224,21 @@ def scrape_seguridad_social():
     cj = "/tmp/ss_cookies_gh.txt"
 
     for page in range(1, 50):
-        # Use shell command for --next chain
-        cmd = (
-            'curl -sL --max-time 30 -k '
-            f'-c "{cj}" '
-            '"https://w6.seg-social.es/subastas/SubaSeControladorInter?opcion=3&avanzada=0" '
-            '--next -sL --max-time 15 -k '
-            f'-b "{cj}" -c "{cj}" '
-            '-d "opcion=10&EMB_TIPOBIEN=0101&EMB_TIPOBIEN=0102&EMB_TIPOBIEN=0211" '
-            '"https://w6.seg-social.es/subastas/SubaSeControladorInter" '
-            '--next -sL --max-time 20 -k '
-            f'-b "{cj}" -c "{cj}" '
-            f'"https://w6.seg-social.es/subastas/SubaSeControladorInter?pagina={page}&opcion=8&tipoOperacion=1"'
-        )
-        r = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=60, errors="replace")
+        # Write a temp bash script for the curl --next chain
+        script = f"""#!/bin/bash
+curl -sL --max-time 30 -k -c '{cj}' \
+  'https://w6.seg-social.es/subastas/SubaSeControladorInter?opcion=3&avanzada=0' \
+  --next -sL --max-time 15 -k -b '{cj}' -c '{cj}' \
+  -d 'opcion=10&EMB_TIPOBIEN=0101&EMB_TIPOBIEN=0102&EMB_TIPOBIEN=0211' \
+  'https://w6.seg-social.es/subastas/SubaSeControladorInter' \
+  --next -sL --max-time 20 -k -b '{cj}' -c '{cj}' \
+  'https://w6.seg-social.es/subastas/SubaSeControladorInter?pagina={page}&opcion=8&tipoOperacion=1'
+"""
+        script_path = f"/tmp/ss_scrape_{page}.sh"
+        with open(script_path, "w") as sf:
+            sf.write(script)
+        
+        r = subprocess.run(["bash", script_path], capture_output=True, text=True, timeout=60, errors="replace")
         content = r.stdout
 
         if len(content) < 3000 or "<caption>" not in content:
