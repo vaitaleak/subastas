@@ -57,7 +57,7 @@ export default function HomePage() {
   const router = useRouter();
 
   useEffect(() => {
-    fetch('/data.json')
+    fetch('/subastas/data.json')
       .then((r) => r.json())
       .then((data) => {
         setFeatured((data.auctions || []).slice(0, 6));
@@ -67,7 +67,7 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    fetch('/data.json')
+    fetch('/subastas/data.json')
       .then((r) => r.json())
       .then((data) => {
         setAuctionCounts(data.stats.totalByProvince || {});

@@ -30,7 +30,7 @@ export default function SubastaDetailPage({ id }: { id: string }) {
   useEffect(() => {
     if (!id) return;
     setLoading(true);
-    fetch('/data.json')
+    fetch('/subastas/data.json')
       .then((r) => r.json())
       .then((json: any) => {
         const found = (json.auctions || []).find((a: any) => String(a.id) === id || a.source_id === id);
@@ -52,7 +52,7 @@ export default function SubastaDetailPage({ id }: { id: string }) {
     if (auction.tipo_bien) params.set('tipo_bien', auction.tipo_bien);
     params.set('page', '1');
 
-    fetch('/data.json')
+    fetch('/subastas/data.json')
       .then((r) => r.json())
       .then((json: any) => {
         let filtered = json.auctions || [];

@@ -63,7 +63,7 @@ export default function BuscarContent() {
     });
 
     // Fetch static data
-    fetch('/data.json')
+    fetch('/subastas/data.json')
       .then((r) => r.json())
       .then((json) => {
         let filtered = [...(json.auctions || [])];
