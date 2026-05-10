@@ -106,12 +106,19 @@ def scrape_boe():
     # Small sequential probe around highest known ID
     import datetime as dt
     year = dt.datetime.now().year
-    max_ja = max((int(m.group(2)) for sid in existing_ids 
-                  if (m := re.match(r"SUB-JA-\d+-(\d+)", sid))), default=262000)
+    ja_nums = []
+    rc_nums = []
+    for sid in existing_ids:
+        m_ja = re.match(r"SUB-JA-\d+-(\d+)", sid)
+        if m_ja:
+            ja_nums.append(int(m_ja.group(1)))
+        m_rc = re.match(r"SUB-RC-\d+-(\d+)", sid)
+        if m_rc:
+            rc_nums.append(int(m_rc.group(1)))
+    max_ja = max(ja_nums) if ja_nums else 262000
     for num in range(max_ja - 5, max_ja + 50):
         ranges_to_probe.add(f"SUB-JA-{year}-{num:06d}")
-    max_rc = max((int(m.group(2)) for sid in existing_ids 
-                  if (m := re.match(r"SUB-RC-\d+-(\d+)", sid))), default=100)
+    max_rc = max(rc_nums) if rc_nums else 100
     for num in range(max_rc - 5, max_rc + 20):
         ranges_to_probe.add(f"SUB-RC-{year}-{num:06d}")
 
