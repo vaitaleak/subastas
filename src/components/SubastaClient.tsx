@@ -18,7 +18,7 @@ import {
 import AuctionCard from '@/components/AuctionCard';
 import AlertForm from '@/components/AlertForm';
 
-export default function SubastaDetailPage() {
+export default function SubastaDetailPage({ id }: { id: string }) {
   
   const [auction, setAuction] = useState<Auction | null>(null);
   const [related, setRelated] = useState<Auction[]>([]);
