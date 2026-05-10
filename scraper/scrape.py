@@ -217,24 +217,28 @@ def scrape_boe():
 # SEGURIDAD SOCIAL SCRAPER
 # ============================================================
 def scrape_seguridad_social():
-    """Scrape SS using curl with shared cookie jar (works on GitHub Actions)."""
+    """Scrape SS using curl --next for session continuity."""
     print("=== Scraping Seguridad Social ===")
 
     all_ss = []
     cj = "/tmp/ss_cookies_gh.txt"
 
     for page in range(1, 50):
-        # Step 1: Init session
-        curl(["-c", cj, "https://w6.seg-social.es/subastas/SubaSeControladorInter?opcion=3&avanzada=0"], timeout=15)
-
-        # Step 2: Submit type selection
-        curl(["-b", cj, "-c", cj,
-              "-d", "opcion=10&EMB_TIPOBIEN=0101&EMB_TIPOBIEN=0102&EMB_TIPOBIEN=0211",
-              "https://w6.seg-social.es/subastas/SubaSeControladorInter"], timeout=15)
-
-        # Step 3: Get results page
-        content = curl(["-b", cj, "-c", cj,
-              f"https://w6.seg-social.es/subastas/SubaSeControladorInter?pagina={page}&opcion=8&tipoOperacion=1"], timeout=20)
+        # Use shell command for --next chain
+        cmd = (
+            'curl -sL --max-time 30 -k '
+            f'-c "{cj}" '
+            '"https://w6.seg-social.es/subastas/SubaSeControladorInter?opcion=3&avanzada=0" '
+            '--next -sL --max-time 15 -k '
+            f'-b "{cj}" -c "{cj}" '
+            '-d "opcion=10&EMB_TIPOBIEN=0101&EMB_TIPOBIEN=0102&EMB_TIPOBIEN=0211" '
+            '"https://w6.seg-social.es/subastas/SubaSeControladorInter" '
+            '--next -sL --max-time 20 -k '
+            f'-b "{cj}" -c "{cj}" '
+            f'"https://w6.seg-social.es/subastas/SubaSeControladorInter?pagina={page}&opcion=8&tipoOperacion=1"'
+        )
+        r = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=60, errors="replace")
+        content = r.stdout
 
         if len(content) < 3000 or "<caption>" not in content:
             if page == 1:
