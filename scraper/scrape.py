@@ -91,17 +91,15 @@ def scrape_boe():
 
     print(f"  Existing BOE IDs: {len(existing_ids)}")
 
-    # Also probe new IDs around known ranges
-    # Extract the numeric part from existing IDs to find the range
+    # Only probe +/-2 around highest known IDs per prefix (not all)
     ranges_to_probe = set()
     for sid in existing_ids:
         m = re.match(r"(SUB-[A-Z]+-\d+)-(\d+)", sid)
         if m:
             prefix = m.group(1)
             num = int(m.group(2))
-            for offset in range(-5, 6):
-                if offset != 0:
-                    ranges_to_probe.add(f"{prefix}-{num + offset:06d}")
+            for offset in [-2, -1, 1, 2]:
+                ranges_to_probe.add(f"{prefix}-{num + offset:06d}")
 
     # Small sequential probe around highest known ID
     import datetime as dt
@@ -123,20 +121,7 @@ def scrape_boe():
         ranges_to_probe.add(f"SUB-RC-{year}-{num:06d}")
 
     all_probe_ids = existing_ids | ranges_to_probe
-    print(f"  Total IDs to probe: {len(all_probe_ids)}")
-
-    # Try BOE search first (might work from GitHub Actions)
-    search_url = (
-        "https://subastas.boe.es/subastas_ava.php?"
-        "campo%5B2%5D=SUBASTA.ESTADO.CODIGO&dato%5B2%5D=EJ"
-        "&opcion=2&numr=200&pagina=1"
-    )
-    search = curl(["-H", "User-Agent: Mozilla/5.0", search_url], timeout=15)
-    found_search = re.findall(r"idSub=(SUB-[A-Z]+-\d+-\d+)", search)
-    found_search += re.findall(r"idSubasta=(SUB-[A-Z]+-\d+-\d+)", search)
-    if found_search:
-        print(f"  Search returned {len(found_search)} IDs")
-        all_probe_ids = all_probe_ids | set(found_search)
+    print(f"  Total IDs to probe: {len(all_probe_ids)} (existing: {len(existing_ids)}, new probes: {len(ranges_to_probe)})")
 
     # Probe detail pages
     auctions = []
@@ -151,7 +136,7 @@ def scrape_boe():
         if "no existe" in d1.lower() or len(d1) < 3000:
             continue
 
-        # This auction exists! Get details
+        # This auction exists! Get details (skip ver=2 to save time)
         d3 = curl([f"https://subastas.boe.es/detalleSubasta.php?idSub={sid}&ver=3"], timeout=8)
         d2 = curl([f"https://subastas.boe.es/detalleSubasta.php?idSub={sid}&ver=2"], timeout=8)
 
