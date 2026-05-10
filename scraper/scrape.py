@@ -220,7 +220,7 @@ def scrape_seguridad_social():
     """Scrape SS using urllib with cookie jar (works on GitHub Actions)."""
     print("=== Scraping Seguridad Social ===")
     import ssl
-    from urllib.request import build_opener, HTTPCookieProcessor, Request
+    from urllib.request import build_opener, HTTPCookieProcessor, Request, HTTPSHandler
     from urllib.parse import urlencode
     from http.cookiejar import MozillaCookieJar
 
@@ -229,7 +229,8 @@ def scrape_seguridad_social():
     ctx.verify_mode = ssl.CERT_NONE
 
     cj = MozillaCookieJar("/tmp/ss_cookies_gh.txt")
-    opener = build_opener(HTTPCookieProcessor(cj))
+    handler = HTTPSHandler(context=ctx)
+    opener = build_opener(HTTPCookieProcessor(cj), handler)
 
     all_ss = []
 
@@ -238,19 +239,19 @@ def scrape_seguridad_social():
             # Step 1: Init session
             req1 = Request("https://w6.seg-social.es/subastas/SubaSeControladorInter?opcion=3&avanzada=0",
                            headers={"User-Agent": "Mozilla/5.0"})
-            opener.open(req1, timeout=15, context=ctx)
+            opener.open(req1, timeout=15)
 
             # Step 2: Submit type selection
             post_data = urlencode({"opcion": "10", "EMB_TIPOBIEN": ["0101", "0102", "0211"]}).encode()
             req2 = Request("https://w6.seg-social.es/subastas/SubaSeControladorInter",
                            data=post_data,
                            headers={"User-Agent": "Mozilla/5.0", "Content-Type": "application/x-www-form-urlencoded"})
-            opener.open(req2, timeout=15, context=ctx)
+            opener.open(req2, timeout=15)
 
             # Step 3: Get page N
             req3 = Request(f"https://w6.seg-social.es/subastas/SubaSeControladorInter?pagina={page}&opcion=8&tipoOperacion=1",
                            headers={"User-Agent": "Mozilla/5.0"})
-            resp3 = opener.open(req3, timeout=20, context=ctx)
+            resp3 = opener.open(req3, timeout=20)
             charset = resp3.headers.get_content_charset() or "utf-8"
             content = resp3.read().decode(charset, errors="replace")
 
