@@ -1,9 +1,0 @@
-node_modules/
-.next/
-out/
-build/
-*.db
-*.sqlite
-.env
-.env.local
-.env.production
