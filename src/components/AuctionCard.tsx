@@ -36,7 +36,7 @@ export default function AuctionCard({ auction }: AuctionCardProps) {
       : 'source-seguridad-social';
 
   return (
-    <Link href={`/subasta/${auction.id}`} className="block group">
+    <Link href={`/subasta?id=${auction.id}`} className="block group">
       <div className="card p-0 overflow-hidden">
         {/* Image / Icon area */}
         <div className="relative h-40 bg-navy-800 flex items-center justify-center overflow-hidden">

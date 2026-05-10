@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 import Link from 'next/link';
-import { Auction, AuctionsResponse } from '@/lib/types';
+import { Auction } from '@/lib/types';
 import {
   formatPrice,
   formatDate,
@@ -18,7 +19,9 @@ import {
 import AuctionCard from '@/components/AuctionCard';
 import AlertForm from '@/components/AlertForm';
 
-export default function SubastaDetailPage({ id }: { id: string }) {
+export default function SubastaDetailPage() {
+  const searchParams = useSearchParams();
+  const id = searchParams.get('id') || '';
   
   const [auction, setAuction] = useState<Auction | null>(null);
   const [related, setRelated] = useState<Auction[]>([]);

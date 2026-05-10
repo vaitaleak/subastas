@@ -7,193 +7,161 @@ interface SpainMapProps {
   auctionCounts: Record<string, number>;
 }
 
-// Province capitals with approximate map coordinates (x,y) on a 400x320 canvas
-// Spain bounding box: roughly 9.3W to 3.3E, 36N to 43.8N
-const PROVINCE_CENTERS: Record<string, { x: number; y: number; name: string }> = {
-  'Coruña': { x: 65, y: 115, name: 'A Coruña' },
-  'Lugo': { x: 95, y: 105, name: 'Lugo' },
-  'Ourense': { x: 100, y: 140, name: 'Ourense' },
-  'Pontevedra': { x: 68, y: 145, name: 'Pontevedra' },
-  'Asturias': { x: 130, y: 90, name: 'Asturias' },
-  'Cantabria': { x: 160, y: 78, name: 'Cantabria' },
-  'Vizcaya': { x: 178, y: 78, name: 'Bizkaia' },
-  'Guipúzcoa': { x: 198, y: 72, name: 'Gipuzkoa' },
-  'Álava': { x: 182, y: 85, name: 'Álava' },
-  'Navarra': { x: 215, y: 82, name: 'Navarra' },
-  'Rioja': { x: 205, y: 98, name: 'La Rioja' },
-  'Huesca': { x: 245, y: 85, name: 'Huesca' },
-  'Zaragoza': { x: 245, y: 115, name: 'Zaragoza' },
-  'Teruel': { x: 265, y: 140, name: 'Teruel' },
-  'Lleida': { x: 252, y: 100, name: 'Lleida' },
-  'Barcelona': { x: 275, y: 100, name: 'Barcelona' },
-  'Girona': { x: 282, y: 82, name: 'Girona' },
-  'Tarragona': { x: 268, y: 118, name: 'Tarragona' },
-  'Castellón': { x: 272, y: 138, name: 'Castellón' },
-  'Valencia': { x: 278, y: 155, name: 'Valencia' },
-  'Alicante': { x: 272, y: 180, name: 'Alicante' },
-  'Murcia': { x: 275, y: 200, name: 'Murcia' },
-  'Albacete': { x: 248, y: 175, name: 'Albacete' },
-  'Cuenca': { x: 235, y: 145, name: 'Cuenca' },
-  'Guadalajara': { x: 215, y: 125, name: 'Guadalajara' },
-  'Madrid': { x: 205, y: 145, name: 'Madrid' },
-  'Toledo': { x: 192, y: 155, name: 'Toledo' },
-  'Ciudad Real': { x: 200, y: 190, name: 'Ciudad Real' },
-  'Badajoz': { x: 145, y: 175, name: 'Badajoz' },
-  'Cáceres': { x: 140, y: 155, name: 'Cáceres' },
-  'Salamanca': { x: 155, y: 135, name: 'Salamanca' },
-  'Zamora': { x: 145, y: 115, name: 'Zamora' },
-  'Valladolid': { x: 168, y: 110, name: 'Valladolid' },
-  'Palencia': { x: 172, y: 98, name: 'Palencia' },
-  'Burgos': { x: 190, y: 92, name: 'Burgos' },
-  'Soria': { x: 210, y: 105, name: 'Soria' },
-  'Segovia': { x: 180, y: 128, name: 'Segovia' },
-  'Ávila': { x: 172, y: 140, name: 'Ávila' },
-  'León': { x: 140, y: 100, name: 'León' },
-  'Huelva': { x: 135, y: 205, name: 'Huelva' },
-  'Sevilla': { x: 155, y: 200, name: 'Sevilla' },
-  'Cádiz': { x: 148, y: 225, name: 'Cádiz' },
-  'Córdoba': { x: 195, y: 205, name: 'Córdoba' },
-  'Jaén': { x: 225, y: 210, name: 'Jaén' },
-  'Granada': { x: 242, y: 220, name: 'Granada' },
-  'Málaga': { x: 215, y: 235, name: 'Málaga' },
-  'Almería': { x: 260, y: 225, name: 'Almería' },
-  'Baleares': { x: 345, y: 155, name: 'Baleares' },
-  'Las Palmas': { x: 115, y: 275, name: 'Las Palmas' },
-  'Santa Cruz de Tenerife': { x: 80, y: 275, name: 'Sta. Cruz Tenerife' },
+// Real province positions from GeoJSON centroids, mapped to SVG viewport
+const PROVINCE_CENTERS: Record<string, { x: number; y: number }> = {
+  'Coruña': { x: 53, y: 63 },
+  'Lugo': { x: 88, y: 53 },
+  'Ourense': { x: 84, y: 87 },
+  'Pontevedra': { x: 52, y: 83 },
+  'Asturias': { x: 117, y: 47 },
+  'Cantabria': { x: 179, y: 53 },
+  'Vizcaya': { x: 207, y: 54 },
+  'Guipúzcoa': { x: 220, y: 57 },
+  'Álava': { x: 205, y: 68 },
+  'Navarra': { x: 235, y: 73 },
+  'Rioja': { x: 214, y: 84 },
+  'Huesca': { x: 273, y: 87 },
+  'Zaragoza': { x: 252, y: 102 },
+  'Teruel': { x: 256, y: 132 },
+  'Lleida': { x: 305, y: 92 },
+  'Barcelona': { x: 325, y: 98 },
+  'Girona': { x: 356, y: 92 },
+  'Tarragona': { x: 296, y: 128 },
+  'Castellón': { x: 283, y: 151 },
+  'Valencia': { x: 255, y: 168 },
+  'Alicante': { x: 267, y: 199 },
+  'Murcia': { x: 253, y: 219 },
+  'Albacete': { x: 228, y: 187 },
+  'Cuenca': { x: 219, y: 151 },
+  'Guadalajara': { x: 206, y: 129 },
+  'Madrid': { x: 180, y: 141 },
+  'Toledo': { x: 171, y: 156 },
+  'Ciudad Real': { x: 177, y: 180 },
+  'Badajoz': { x: 122, y: 187 },
+  'Cáceres': { x: 118, y: 160 },
+  'Salamanca': { x: 123, y: 129 },
+  'Zamora': { x: 124, y: 101 },
+  'Valladolid': { x: 151, y: 100 },
+  'Palencia': { x: 164, y: 82 },
+  'Burgos': { x: 186, y: 79 },
+  'Soria': { x: 212, y: 105 },
+  'Segovia': { x: 175, y: 115 },
+  'Ávila': { x: 151, y: 136 },
+  'León': { x: 128, y: 75 },
+  'Huelva': { x: 105, y: 223 },
+  'Sevilla': { x: 136, y: 227 },
+  'Cádiz': { x: 129, y: 257 },
+  'Córdoba': { x: 153, y: 215 },
+  'Jaén': { x: 187, y: 210 },
+  'Granada': { x: 196, y: 231 },
+  'Málaga': { x: 155, y: 244 },
+  'Almería': { x: 228, y: 234 },
+  'Baleares': { x: 344, y: 170 },
+  'Las Palmas': { x: 95, y: 285 },
+  'Santa Cruz de Tenerife': { x: 65, y: 285 },
 };
 
-// Simplified Spain mainland outline path
-const SPAIN_OUTLINE = 'M130,65 L160,60 L185,62 L210,58 L235,62 L250,68 L265,72 L285,68 L295,75 L290,85 L285,95 L290,105 L295,115 L290,130 L285,145 L288,160 L282,175 L278,190 L280,205 L270,220 L260,235 L245,242 L230,248 L215,250 L200,245 L185,250 L170,248 L155,240 L140,230 L130,215 L125,200 L115,190 L108,175 L100,160 L95,140 L90,120 L95,100 L105,85 L115,75 Z';
+// Real Spain outline from GeoJSON convex hull (simplified)
+const SPAIN_OUTLINE = 'M40,62 L52,66 L87,233 L88,235 L123,265 L129,268 L134,270 L199,272 L229,234 L253,219 L267,199 L283,151 L296,128 L305,92 L325,98 L356,92 L361,84 L357,80 L353,79 L231,40 L179,53 L151,47 L117,47 L88,53 L53,63 Z';
 
-// Portugal outline (simplified, to show the border)
-const PORTUGAL_OUTLINE = 'M130,85 L118,95 L108,110 L100,130 L98,150 L105,170 L110,185 L118,200 L125,215 L135,230 L130,240 L120,235 L112,220 L105,200 L100,180 L95,155 L90,130 L92,110 L100,92 L112,80 L125,75 Z';
+// Portugal outline (simplified)
+const PORTUGAL_OUTLINE = 'M52,63 L40,62 L40,66 L52,83 L84,87 L88,53 L84,87 L123,101 L123,129 L122,187 L105,223 L88,235 L87,233 L84,87 L52,83 L52,63 Z';
 
 export default function SpainMap({ auctionCounts }: SpainMapProps) {
   const router = useRouter();
   const [hovered, setHovered] = useState<string | null>(null);
 
   const maxCount = useMemo(() => {
-    const vals = Object.values(auctionCounts);
+    const vals = Object.values(auctionCounts).filter(v => v > 0);
     return vals.length > 0 ? Math.max(...vals) : 1;
   }, [auctionCounts]);
 
-  const getDotRadius = (count: number) => {
+  const getRadius = (count: number) => {
     if (count === 0) return 3;
-    return Math.max(4, Math.min(14, 4 + (count / maxCount) * 10));
+    return Math.max(4, Math.min(15, 4 + (count / maxCount) * 11));
   };
 
-  const getDotColor = (count: number) => {
-    if (count === 0) return '#4b5563';
-    const ratio = count / maxCount;
-    if (ratio > 0.7) return '#a78bfa';
-    if (ratio > 0.4) return '#8b5cf6';
-    if (ratio > 0.2) return '#7c3aed';
+  const getColor = (count: number) => {
+    if (count === 0) return '#374151';
+    const r = count / maxCount;
+    if (r > 0.6) return '#a78bfa';
+    if (r > 0.3) return '#7c3aed';
     return '#6d28d9';
   };
 
-  const handleClick = (province: string) => {
-    router.push(`/buscar?provincia=${encodeURIComponent(province)}`);
-  };
-
   return (
-    <div className="relative w-full max-w-3xl mx-auto">
-      <div className="flex justify-center">
-        <svg viewBox="0 0 400 310" className="w-full max-w-2xl" style={{ minHeight: '280px' }}>
-          {/* Background */}
-          <rect x="0" y="0" width="400" height="310" fill="transparent" />
+    <div className="relative w-full max-w-2xl mx-auto">
+      <svg viewBox="0 0 400 310" className="w-full" style={{ minHeight: '260px' }}>
+        {/* Subtle grid */}
+        {Array.from({length:6}, (_,i) => (
+          <line key={`h${i}`} x1="35" y1={40+i*45} x2="370" y2={40+i*45} stroke="#1e293b" strokeWidth="0.3" />
+        ))}
+        {Array.from({length:8}, (_,i) => (
+          <line key={`v${i}`} x1={40+i*45} y1="35" x2={40+i*45} y2="275" stroke="#1e293b" strokeWidth="0.3" />
+        ))}
 
-          {/* Subtle grid */}
-          {[50,100,150,200,250,300].map(y => (
-            <line key={`h${y}`} x1="30" y1={y} x2="360" y2={y} stroke="#1e293b" strokeWidth="0.5" />
-          ))}
-          {[80,130,180,230,280,330].map(x => (
-            <line key={`v${x}`} x1={x} y1="40" x2={x} y2="260" stroke="#1e293b" strokeWidth="0.5" />
-          ))}
+        {/* Portugal */}
+        <path d={PORTUGAL_OUTLINE} fill="#0c1222" stroke="#1e3a5f" strokeWidth="0.8" />
 
-          {/* Portugal outline */}
-          <path d={PORTUGAL_OUTLINE} fill="#0f172a" stroke="#334155" strokeWidth="1" opacity="0.6" />
+        {/* Spain mainland */}
+        <path d={SPAIN_OUTLINE} fill="#111827" stroke="#334155" strokeWidth="1.2" />
 
-          {/* Spain mainland outline */}
-          <path d={SPAIN_OUTLINE} fill="#1e293b" stroke="#475569" strokeWidth="1.5" opacity="0.8" />
+        {/* Baleares */}
+        <ellipse cx="344" cy="170" rx="20" ry="14" fill="#111827" stroke="#334155" strokeWidth="1" />
 
-          {/* Province dots */}
-          {Object.entries(PROVINCE_CENTERS).map(([province, center]) => {
-            const count = auctionCounts[province] || 0;
-            const r = getDotRadius(count);
-            const color = getDotColor(count);
-            const isHovered = hovered === province;
+        {/* Canary Islands inset */}
+        <rect x="48" y="270" width="120" height="32" rx="3" fill="none" stroke="#1e3a5f" strokeWidth="0.5" strokeDasharray="4,2" />
+        <text x="108" y="268" textAnchor="middle" fill="#475569" fontSize="6">Canarias</text>
 
-            return (
-              <g
-                key={province}
-                onClick={() => handleClick(province)}
-                onMouseEnter={() => setHovered(province)}
-                onMouseLeave={() => setHovered(null)}
-                style={{ cursor: 'pointer' }}
-              >
-                {/* Glow effect on hover */}
-                {isHovered && (
-                  <circle cx={center.x} cy={center.y} r={r + 6} fill={color} opacity="0.2" />
-                )}
-                <circle
-                  cx={center.x}
-                  cy={center.y}
-                  r={r}
-                  fill={color}
-                  stroke={isHovered ? '#fff' : color}
-                  strokeWidth={isHovered ? 1.5 : 0.5}
-                  opacity={count === 0 ? 0.3 : 0.9}
-                />
-              </g>
-            );
-          })}
+        {/* Province dots */}
+        {Object.entries(PROVINCE_CENTERS).map(([province, center]) => {
+          const count = auctionCounts[province] || 0;
+          const r = getRadius(count);
+          const color = getColor(count);
+          const isH = hovered === province;
 
-          {/* Baleares outline */}
-          <ellipse cx="345" cy="155" rx="18" ry="12" fill="#1e293b" stroke="#475569" strokeWidth="1" opacity="0.8" />
-
-          {/* Canary Islands inset box */}
-          <rect x="55" y="260" width="110" height="40" rx="4" fill="none" stroke="#334155" strokeWidth="0.5" strokeDasharray="3,3" />
-          <text x="110" y="258" textAnchor="middle" fill="#64748b" fontSize="7">Canarias</text>
-
-          {/* Tooltip */}
-          {hovered && PROVINCE_CENTERS[hovered] && (
-            <g>
-              <rect
-                x={PROVINCE_CENTERS[hovered].x - 55}
-                y={PROVINCE_CENTERS[hovered].y - 32}
-                width="110"
-                height="22"
-                rx="4"
-                fill="#1e293b"
-                stroke="#475569"
-                strokeWidth="0.5"
+          return (
+            <g
+              key={province}
+              onClick={() => router.push(`/buscar?provincia=${encodeURIComponent(province)}`)}
+              onMouseEnter={() => setHovered(province)}
+              onMouseLeave={() => setHovered(null)}
+              style={{ cursor: 'pointer' }}
+            >
+              {isH && <circle cx={center.x} cy={center.y} r={r + 8} fill={color} opacity="0.15" />}
+              <circle
+                cx={center.x} cy={center.y} r={r}
+                fill={color}
+                stroke={isH ? '#e2e8f0' : color}
+                strokeWidth={isH ? 1.5 : 0.5}
+                opacity={count === 0 ? 0.25 : 0.85}
               />
-              <text
-                x={PROVINCE_CENTERS[hovered].x}
-                y={PROVINCE_CENTERS[hovered].y - 18}
-                textAnchor="middle"
-                fill="#e2e8f0"
-                fontSize="9"
-                fontWeight="600"
-              >
-                {PROVINCE_CENTERS[hovered].name}: {auctionCounts[hovered] || 0} subastas
+            </g>
+          );
+        })}
+
+        {/* Tooltip */}
+        {hovered && PROVINCE_CENTERS[hovered] && (() => {
+          const c = PROVINCE_CENTERS[hovered];
+          const count = auctionCounts[hovered] || 0;
+          const tx = Math.min(Math.max(c.x, 65), 335);
+          const ty = c.y - 28;
+          return (
+            <g>
+              <rect x={tx - 52} y={ty - 10} width="104" height="20" rx="4" fill="#1e293b" stroke="#475569" strokeWidth="0.5" />
+              <text x={tx} y={ty + 4} textAnchor="middle" fill="#e2e8f0" fontSize="8" fontWeight="600">
+                {hovered}: {count} subastas
               </text>
             </g>
-          )}
-        </svg>
-      </div>
+          );
+        })()}
+      </svg>
 
       {/* Legend */}
-      <div className="flex justify-center gap-6 mt-2 text-xs text-slate-500">
-        <div className="flex items-center gap-1.5">
-          <span className="inline-block w-2 h-2 rounded-full bg-gray-600"></span> Sin datos
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="inline-block w-3 h-3 rounded-full bg-violet-700"></span> Pocas
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="inline-block w-4 h-4 rounded-full bg-violet-400"></span> Muchas
-        </div>
+      <div className="flex justify-center gap-4 mt-1 text-xs text-slate-500">
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-700 inline-block"></span> Sin datos</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-violet-800 inline-block"></span> Pocas</span>
+        <span className="flex items-center gap-1"><span className="w-4 h-4 rounded-full bg-violet-400 inline-block"></span> Muchas</span>
       </div>
     </div>
   );
