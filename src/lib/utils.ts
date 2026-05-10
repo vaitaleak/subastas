@@ -173,7 +173,7 @@ export function getTipoBienIcon(tipo: string): string {
     vivienda: '🏠',
     garaje: '🅿️',
     solar: '🏗️',
-    finca rustica: '🌾',
+    'finca rustica': '🌾',
     'finca rústica': '🌾',
     'local comercial': '🏪',
     local: '🏪',
