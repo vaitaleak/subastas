@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import Link from 'next/link';
 import { Inter } from 'next/font/google';
 import './globals.css';
 
@@ -47,7 +48,7 @@ export default function RootLayout({
         {/* Navigation header */}
         <header className="sticky top-0 z-30 border-b border-navy-700/50 bg-navy-900/80 backdrop-blur-xl">
           <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-            <a href="/" className="flex items-center gap-2 group">
+            <Link href="/" className="flex items-center gap-2 group">
               <div className="w-8 h-8 rounded-lg bg-accent-500 flex items-center justify-center text-white font-bold text-sm">
                 S
               </div>
@@ -56,7 +57,7 @@ export default function RootLayout({
               </span>
             </a>
             <div className="flex items-center gap-4">
-              <a
+              <Link
                 href="/buscar"
                 className="hidden sm:inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-white transition-colors"
               >
@@ -65,7 +66,7 @@ export default function RootLayout({
                 </svg>
                 Buscar subastas
               </a>
-              <a
+              <Link
                 href="/buscar"
                 className="sm:hidden p-2 text-slate-400 hover:text-white"
               >
@@ -101,10 +102,10 @@ export default function RootLayout({
               <div>
                 <h4 className="text-sm font-semibold text-slate-300 mb-3">Navegación</h4>
                 <ul className="space-y-2 text-sm">
-                  <li><a href="/" className="text-slate-500 hover:text-accent-400 transition-colors">Inicio</a></li>
-                  <li><a href="/buscar" className="text-slate-500 hover:text-accent-400 transition-colors">Buscar subastas</a></li>
-                  <li><a href="/buscar?tipo_bien=vivienda" className="text-slate-500 hover:text-accent-400 transition-colors">Viviendas</a></li>
-                  <li><a href="/buscar?tipo_bien=garaje" className="text-slate-500 hover:text-accent-400 transition-colors">Garajes</a></li>
+                  <li><Link href="/" className="text-slate-500 hover:text-accent-400 transition-colors">Inicio</Link></li>
+                  <li><Link href="/buscar" className="text-slate-500 hover:text-accent-400 transition-colors">Buscar subastas</Link></li>
+                  <li><Link href="/buscar?tipo_bien=vivienda" className="text-slate-500 hover:text-accent-400 transition-colors">Viviendas</Link></li>
+                  <li><Link href="/buscar?tipo_bien=garaje" className="text-slate-500 hover:text-accent-400 transition-colors">Garajes</Link></li>
                 </ul>
               </div>
               <div>
