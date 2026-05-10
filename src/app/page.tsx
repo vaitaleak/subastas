@@ -7,16 +7,16 @@ import SearchBar from '@/components/SearchBar';
 import StatsBar from '@/components/StatsBar';
 import AuctionCard from '@/components/AuctionCard';
 import SpainMap from '@/components/SpainMap';
-import { Auction, AuctionsResponse } from '@/lib/types';
-import { getTipoBienLabel } from '@/lib/utils';
+import { Auction } from '@/lib/types';
 
+// Use display names matching data.json tipo_bien values
 const QUICK_FILTERS = [
-  { tipo: 'vivienda', label: 'Viviendas', icon: '🏠' },
-  { tipo: 'garaje', label: 'Garajes', icon: '🅿️' },
-  { tipo: 'solar', label: 'Solares', icon: '🏗️' },
-  { tipo: 'vehiculo', label: 'Coches', icon: '🚗' },
-  { tipo: 'finca_rustica', label: 'Fincas', icon: '🌾' },
-  { tipo: 'local', label: 'Locales', icon: '🏪' },
+  { tipo: 'Vivienda', label: 'Viviendas', icon: '🏠' },
+  { tipo: 'Garaje', label: 'Garajes', icon: '🅿️' },
+  { tipo: 'Solar', label: 'Solares', icon: '🏗️' },
+  { tipo: 'Vehículo', label: 'Coches', icon: '🚗' },
+  { tipo: 'Finca rústica', label: 'Fincas', icon: '🌾' },
+  { tipo: 'Local comercial', label: 'Locales', icon: '🏪' },
 ];
 
 const STEPS = [
@@ -53,27 +53,27 @@ export default function HomePage() {
   const [featured, setFeatured] = useState<Auction[]>([]);
   const [loading, setLoading] = useState(true);
   const [auctionCounts, setAuctionCounts] = useState<Record<string, number>>({});
-  const [statsData, setStatsData] = useState<{ totalActive: number; newToday: number } | null>(null);
   const router = useRouter();
 
   useEffect(() => {
     fetch('/subastas/data.json')
       .then((r) => r.json())
       .then((data) => {
-        setFeatured((data.auctions || []).slice(0, 6));
+        const auctions: Auction[] = data.auctions || [];
+        // Take first 6 as featured
+        setFeatured(auctions.slice(0, 6));
+        
+        // Compute province counts from data
+        const counts: Record<string, number> = {};
+        auctions.forEach((a) => {
+          if (a.provincia) {
+            counts[a.provincia] = (counts[a.provincia] || 0) + 1;
+          }
+        });
+        setAuctionCounts(counts);
       })
       .catch(() => setFeatured([]))
       .finally(() => setLoading(false));
-  }, []);
-
-  useEffect(() => {
-    fetch('/subastas/data.json')
-      .then((r) => r.json())
-      .then((data) => {
-        setAuctionCounts(data.stats.totalByProvince || {});
-        setStatsData({ totalActive: data.stats.totalActive || 0, newToday: data.stats.newToday || 0 });
-      })
-      .catch(() => {});
   }, []);
 
   const handleSearch = (query: string) => {
@@ -112,7 +112,7 @@ export default function HomePage() {
             {QUICK_FILTERS.map((f) => (
               <Link
                 key={f.tipo}
-                href={`/buscar?tipo_bien=${f.tipo}`}
+                href={`/buscar?tipo_bien=${encodeURIComponent(f.tipo)}`}
                 className="chip hover:scale-105"
               >
                 <span>{f.icon}</span>

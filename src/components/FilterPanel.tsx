@@ -1,8 +1,25 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { PROVINCE_LIST, TIPO_BIEN_LIST, SOURCE_LIST } from '@/lib/utils';
+import { PROVINCE_LIST } from '@/lib/utils';
 import type { AuctionFilters } from '@/lib/types';
+
+// Dropdown options that match data.json tipo_bien values exactly
+const TIPO_OPTIONS = [
+  { value: 'Vivienda', label: 'Vivienda' },
+  { value: 'Garaje', label: 'Garaje' },
+  { value: 'Solar', label: 'Solar' },
+  { value: 'Local comercial', label: 'Local comercial' },
+  { value: 'Finca rústica', label: 'Finca rústica' },
+  { value: 'Vehículo', label: 'Vehículo' },
+  { value: 'Nave industrial', label: 'Nave industrial' },
+];
+
+const SOURCE_OPTIONS = [
+  { value: 'boe', label: 'BOE Judicial' },
+  { value: 'hacienda', label: 'Agencia Tributaria' },
+  { value: 'seguridad_social', label: 'Seguridad Social' },
+];
 
 interface FilterPanelProps {
   filters: AuctionFilters;
@@ -77,7 +94,7 @@ export default function FilterPanel({ filters, onFilterChange, onClose, isOpen =
           className="input text-sm"
         >
           <option value="">Todos los tipos</option>
-          {TIPO_BIEN_LIST.map((t) => (
+          {TIPO_OPTIONS.map((t) => (
             <option key={t.value} value={t.value}>
               {t.label}
             </option>
@@ -94,7 +111,7 @@ export default function FilterPanel({ filters, onFilterChange, onClose, isOpen =
           className="input text-sm"
         >
           <option value="">Todos los orígenes</option>
-          {SOURCE_LIST.map((s) => (
+          {SOURCE_OPTIONS.map((s) => (
             <option key={s.value} value={s.value}>
               {s.label}
             </option>

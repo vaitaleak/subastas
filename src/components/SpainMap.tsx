@@ -1,106 +1,95 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface SpainMapProps {
   auctionCounts: Record<string, number>;
 }
 
-// Simplified SVG paths for Spain's provinces (approximate boundaries)
-// These are the main recognizable shapes for the Iberian Peninsula provinces
-const PROVINCE_PATHS: Record<string, string> = {
-  'Álava': 'M215,125 L230,118 L245,120 L250,130 L240,140 L225,138 L215,132 Z',
-  'Albacete': 'M265,185 L285,180 L300,190 L305,210 L290,220 L270,215 L260,200 Z',
-  'Alicante': 'M295,190 L310,185 L320,195 L325,210 L310,220 L295,215 L290,200 Z',
-  'Almería': 'M270,230 L290,225 L305,235 L300,255 L285,260 L270,250 Z',
-  'Ávila': 'M195,145 L215,140 L225,150 L220,170 L200,175 L190,160 Z',
-  'Badajoz': 'M145,175 L175,165 L195,170 L200,190 L185,200 L155,195 L140,185 Z',
-  'Baleares': 'M370,175 L380,170 L395,175 L395,185 L385,190 L372,188 Z',
-  'Barcelona': 'M285,120 L300,115 L310,125 L305,140 L290,145 L280,135 Z',
-  'Burgos': 'M200,95 L230,90 L250,100 L245,120 L225,125 L205,118 L195,108 Z',
-  'Cáceres': 'M135,175 L155,165 L180,165 L195,180 L185,200 L160,200 L140,195 Z',
-  'Cádiz': 'M185,245 L210,240 L225,250 L220,265 L200,270 L185,262 Z',
-  'Castellón': 'M285,135 L300,130 L310,140 L305,155 L290,158 L280,148 Z',
-  'Ciudad Real': 'M195,185 L220,180 L250,185 L260,200 L250,220 L225,225 L200,215 L190,200 Z',
-  'Córdoba': 'M215,210 L235,205 L250,215 L245,235 L230,240 L215,230 Z',
-  'Coruña': 'M80,115 L100,105 L115,115 L110,135 L95,140 L78,132 Z',
-  'Cuenca': 'M255,145 L275,140 L290,150 L285,170 L270,175 L255,165 Z',
-  'Girona': 'M290,105 L310,98 L325,105 L320,120 L305,125 L290,118 Z',
-  'Granada': 'M255,225 L270,220 L285,230 L280,250 L265,255 L250,242 Z',
-  'Guadalajara': 'M220,130 L245,128 L260,138 L255,155 L235,158 L220,148 Z',
-  'Guipúzcoa': 'M235,100 L250,92 L265,95 L262,108 L248,112 L237,108 Z',
-  'Huelva': 'M145,210 L170,205 L190,215 L185,240 L170,248 L148,240 L140,225 Z',
-  'Huesca': 'M260,95 L280,88 L300,95 L295,112 L278,118 L262,112 Z',
-  'Jaén': 'M240,220 L258,215 L270,225 L265,242 L250,245 L238,235 Z',
-  'León': 'M140,100 L165,95 L185,105 L180,125 L165,132 L145,128 L135,115 Z',
-  'Lleida': 'M265,112 L285,108 L298,118 L292,132 L278,135 L265,128 Z',
-  'Rioja': 'M220,105 L240,100 L252,108 L248,118 L232,122 L220,115 Z',
-  'Lugo': 'M95,108 L120,100 L140,108 L138,128 L122,135 L100,130 L90,118 Z',
-  'Madrid': 'M205,148 L220,145 L230,155 L225,168 L212,170 L205,160 Z',
-  'Málaga': 'M225,248 L245,242 L260,250 L255,268 L240,272 L225,262 Z',
-  'Murcia': 'M285,200 L305,195 L320,205 L315,225 L300,230 L285,220 Z',
-  'Navarra': 'M248,95 L268,90 L280,98 L275,110 L258,115 L248,108 Z',
-  'Ourense': 'M105,130 L125,125 L140,132 L140,150 L128,158 L110,155 L100,142 Z',
-  'Asturias': 'M130,95 L155,90 L175,98 L170,112 L152,115 L135,110 Z',
-  'Palencia': 'M188,100 L208,95 L220,105 L215,120 L198,125 L188,115 Z',
-  'Las Palmas': 'M215,300 L230,295 L250,300 L248,315 L230,318 L215,312 Z',
-  'Pontevedra': 'M80,135 L102,130 L115,140 L110,158 L95,162 L78,155 L75,145 Z',
-  'Salamanca': 'M150,135 L170,128 L190,135 L195,155 L182,162 L160,160 L148,150 Z',
-  'Santa Cruz de Tenerife': 'M175,305 L195,300 L215,308 L210,320 L192,322 L175,315 Z',
-  'Cantabria': 'M170,85 L192,82 L210,90 L208,100 L192,105 L175,98 Z',
-  'Segovia': 'M188,125 L208,120 L220,130 L218,148 L205,150 L190,142 Z',
-  'Sevilla': 'M185,215 L210,210 L230,220 L225,240 L208,245 L188,235 Z',
-  'Soria': 'M235,115 L255,110 L270,118 L268,135 L252,140 L238,132 Z',
-  'Tarragona': 'M282,125 L298,120 L308,130 L305,145 L292,148 L280,140 Z',
-  'Teruel': 'M265,135 L285,130 L300,140 L298,158 L282,162 L268,155 Z',
-  'Toledo': 'M190,160 L212,155 L230,165 L225,182 L208,185 L192,175 Z',
-  'Valencia': 'M300,155 L318,150 L328,162 L325,180 L310,185 L298,175 Z',
-  'Valladolid': 'M172,105 L192,100 L208,110 L205,125 L188,130 L172,122 Z',
-  'Bizkaia': 'M205,85 L225,82 L240,90 L235,100 L220,105 L208,98 Z',
-  'Zamora': 'M135,120 L155,115 L175,122 L172,140 L158,145 L140,140 L132,132 Z',
-  'Zaragoza': 'M265,118 L288,112 L305,122 L300,142 L282,148 L268,140 Z',
-  'Ceuta': 'M265,272 L275,268 L282,275 L278,282 L268,282 Z',
-  'Melilla': 'M315,258 L325,255 L332,262 L328,270 L318,268 Z',
+// Province capitals with approximate map coordinates (x,y) on a 400x320 canvas
+// Spain bounding box: roughly 9.3W to 3.3E, 36N to 43.8N
+const PROVINCE_CENTERS: Record<string, { x: number; y: number; name: string }> = {
+  'Coruña': { x: 65, y: 115, name: 'A Coruña' },
+  'Lugo': { x: 95, y: 105, name: 'Lugo' },
+  'Ourense': { x: 100, y: 140, name: 'Ourense' },
+  'Pontevedra': { x: 68, y: 145, name: 'Pontevedra' },
+  'Asturias': { x: 130, y: 90, name: 'Asturias' },
+  'Cantabria': { x: 160, y: 78, name: 'Cantabria' },
+  'Vizcaya': { x: 178, y: 78, name: 'Bizkaia' },
+  'Guipúzcoa': { x: 198, y: 72, name: 'Gipuzkoa' },
+  'Álava': { x: 182, y: 85, name: 'Álava' },
+  'Navarra': { x: 215, y: 82, name: 'Navarra' },
+  'Rioja': { x: 205, y: 98, name: 'La Rioja' },
+  'Huesca': { x: 245, y: 85, name: 'Huesca' },
+  'Zaragoza': { x: 245, y: 115, name: 'Zaragoza' },
+  'Teruel': { x: 265, y: 140, name: 'Teruel' },
+  'Lleida': { x: 252, y: 100, name: 'Lleida' },
+  'Barcelona': { x: 275, y: 100, name: 'Barcelona' },
+  'Girona': { x: 282, y: 82, name: 'Girona' },
+  'Tarragona': { x: 268, y: 118, name: 'Tarragona' },
+  'Castellón': { x: 272, y: 138, name: 'Castellón' },
+  'Valencia': { x: 278, y: 155, name: 'Valencia' },
+  'Alicante': { x: 272, y: 180, name: 'Alicante' },
+  'Murcia': { x: 275, y: 200, name: 'Murcia' },
+  'Albacete': { x: 248, y: 175, name: 'Albacete' },
+  'Cuenca': { x: 235, y: 145, name: 'Cuenca' },
+  'Guadalajara': { x: 215, y: 125, name: 'Guadalajara' },
+  'Madrid': { x: 205, y: 145, name: 'Madrid' },
+  'Toledo': { x: 192, y: 155, name: 'Toledo' },
+  'Ciudad Real': { x: 200, y: 190, name: 'Ciudad Real' },
+  'Badajoz': { x: 145, y: 175, name: 'Badajoz' },
+  'Cáceres': { x: 140, y: 155, name: 'Cáceres' },
+  'Salamanca': { x: 155, y: 135, name: 'Salamanca' },
+  'Zamora': { x: 145, y: 115, name: 'Zamora' },
+  'Valladolid': { x: 168, y: 110, name: 'Valladolid' },
+  'Palencia': { x: 172, y: 98, name: 'Palencia' },
+  'Burgos': { x: 190, y: 92, name: 'Burgos' },
+  'Soria': { x: 210, y: 105, name: 'Soria' },
+  'Segovia': { x: 180, y: 128, name: 'Segovia' },
+  'Ávila': { x: 172, y: 140, name: 'Ávila' },
+  'León': { x: 140, y: 100, name: 'León' },
+  'Zamora': { x: 148, y: 120, name: 'Zamora' },
+  'Huelva': { x: 135, y: 205, name: 'Huelva' },
+  'Sevilla': { x: 155, y: 200, name: 'Sevilla' },
+  'Cádiz': { x: 148, y: 225, name: 'Cádiz' },
+  'Córdoba': { x: 195, y: 205, name: 'Córdoba' },
+  'Jaén': { x: 225, y: 210, name: 'Jaén' },
+  'Granada': { x: 242, y: 220, name: 'Granada' },
+  'Málaga': { x: 215, y: 235, name: 'Málaga' },
+  'Almería': { x: 260, y: 225, name: 'Almería' },
+  'Baleares': { x: 345, y: 155, name: 'Baleares' },
+  'Las Palmas': { x: 115, y: 275, name: 'Las Palmas' },
+  'Santa Cruz de Tenerife': { x: 80, y: 275, name: 'Sta. Cruz Tenerife' },
 };
 
-const SPAIN_VIEWBOX = '70 80 330 250';
+// Simplified Spain mainland outline path
+const SPAIN_OUTLINE = 'M130,65 L160,60 L185,62 L210,58 L235,62 L250,68 L265,72 L285,68 L295,75 L290,85 L285,95 L290,105 L295,115 L290,130 L285,145 L288,160 L282,175 L278,190 L280,205 L270,220 L260,235 L245,242 L230,248 L215,250 L200,245 L185,250 L170,248 L155,240 L140,230 L130,215 L125,200 L115,190 L108,175 L100,160 L95,140 L90,120 L95,100 L105,85 L115,75 Z';
+
+// Portugal outline (simplified, to show the border)
+const PORTUGAL_OUTLINE = 'M130,85 L118,95 L108,110 L100,130 L98,150 L105,170 L110,185 L118,200 L125,215 L135,230 L130,240 L120,235 L112,220 L105,200 L100,180 L95,155 L90,130 L92,110 L100,92 L112,80 L125,75 Z';
 
 export default function SpainMap({ auctionCounts }: SpainMapProps) {
   const router = useRouter();
-  const [hoveredProvince, setHoveredProvince] = useState<string | null>(null);
-  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+  const [hovered, setHovered] = useState<string | null>(null);
 
-  // Compute max count for heatmap scaling
   const maxCount = useMemo(() => {
-    const values = Object.values(auctionCounts);
-    return values.length > 0 ? Math.max(...values) : 1;
+    const vals = Object.values(auctionCounts);
+    return vals.length > 0 ? Math.max(...vals) : 1;
   }, [auctionCounts]);
 
-  const getColor = (province: string): string => {
-    const count = auctionCounts[province] || 0;
-    if (count === 0) return '#1e293b'; // slate-800
-
-    const intensity = Math.max(0.15, count / maxCount);
-    // Purple heatmap: from dark to bright purple
-    const r = Math.round(88 + (168 - 88) * intensity);
-    const g = Math.round(28 + (85 - 28) * intensity);
-    const b = Math.round(135 + (247 - 135) * intensity);
-    return `rgb(${r}, ${g}, ${b})`;
+  const getDotRadius = (count: number) => {
+    if (count === 0) return 3;
+    return Math.max(4, Math.min(14, 4 + (count / maxCount) * 10));
   };
 
-  const getStrokeColor = (province: string): string => {
-    return hoveredProvince === province ? '#c084fc' : '#334155';
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    const rect = (e.currentTarget as SVGSVGElement).closest('div')?.getBoundingClientRect();
-    if (rect) {
-      setTooltipPos({
-        x: e.clientX - rect.left + 15,
-        y: e.clientY - rect.top - 10,
-      });
-    }
+  const getDotColor = (count: number) => {
+    if (count === 0) return '#4b5563';
+    const ratio = count / maxCount;
+    if (ratio > 0.7) return '#a78bfa';
+    if (ratio > 0.4) return '#8b5cf6';
+    if (ratio > 0.2) return '#7c3aed';
+    return '#6d28d9';
   };
 
   const handleClick = (province: string) => {
@@ -108,58 +97,105 @@ export default function SpainMap({ auctionCounts }: SpainMapProps) {
   };
 
   return (
-    <div className="relative w-full h-full min-h-[350px]">
-      <svg
-        viewBox={SPAIN_VIEWBOX}
-        className="w-full h-full"
-        xmlns="http://www.w3.org/2000/svg"
-        onMouseMove={handleMouseMove}
-      >
-        {/* Background */}
-        <rect x="70" y="80" width="330" height="250" fill="transparent" />
+    <div className="relative w-full max-w-3xl mx-auto">
+      <div className="flex justify-center">
+        <svg viewBox="0 0 400 310" className="w-full max-w-2xl" style={{ minHeight: '280px' }}>
+          {/* Background */}
+          <rect x="0" y="0" width="400" height="310" fill="transparent" />
 
-        {/* Province shapes */}
-        {Object.entries(PROVINCE_PATHS).map(([province, path]) => (
-          <path
-            key={province}
-            d={path}
-            fill={getColor(province)}
-            stroke={getStrokeColor(province)}
-            strokeWidth={hoveredProvince === province ? 2 : 0.5}
-            style={{ cursor: 'pointer', transition: 'fill 0.2s, stroke 0.2s' }}
-            onMouseEnter={() => setHoveredProvince(province)}
-            onMouseLeave={() => setHoveredProvince(null)}
-            onClick={() => handleClick(province)}
-          />
-        ))}
+          {/* Subtle grid */}
+          {[50,100,150,200,250,300].map(y => (
+            <line key={`h${y}`} x1="30" y1={y} x2="360" y2={y} stroke="#1e293b" strokeWidth="0.5" />
+          ))}
+          {[80,130,180,230,280,330].map(x => (
+            <line key={`v${x}`} x1={x} y1="40" x2={x} y2="260" stroke="#1e293b" strokeWidth="0.5" />
+          ))}
 
-        {/* Legend */}
-        <g transform="translate(80, 295)">
-          <text x="0" y="0" fill="#94a3b8" fontSize="8" fontFamily="system-ui">Menos</text>
-          <rect x="30" y="-7" width="12" height="8" fill="#1e293b" stroke="#334155" strokeWidth="0.3" />
-          <rect x="44" y="-7" width="12" height="8" fill="rgb(110, 40, 160)" />
-          <rect x="58" y="-7" width="12" height="8" fill="rgb(140, 60, 200)" />
-          <rect x="72" y="-7" width="12" height="8" fill="rgb(168, 85, 247)" />
-          <text x="88" y="0" fill="#94a3b8" fontSize="8" fontFamily="system-ui">Más</text>
-        </g>
-      </svg>
+          {/* Portugal outline */}
+          <path d={PORTUGAL_OUTLINE} fill="#0f172a" stroke="#334155" strokeWidth="1" opacity="0.6" />
 
-      {/* Tooltip */}
-      {hoveredProvince && (
-        <div
-          className="absolute pointer-events-none z-10 px-3 py-2 rounded-lg bg-navy-900/95 border border-navy-600 shadow-lg backdrop-blur-sm"
-          style={{
-            left: tooltipPos.x,
-            top: tooltipPos.y,
-            transform: 'translate(0, -100%)',
-          }}
-        >
-          <p className="text-sm font-semibold text-white">{hoveredProvince}</p>
-          <p className="text-xs text-accent-400">
-            {auctionCounts[hoveredProvince] || 0} subasta{(auctionCounts[hoveredProvince] || 0) !== 1 ? 's' : ''}
-          </p>
+          {/* Spain mainland outline */}
+          <path d={SPAIN_OUTLINE} fill="#1e293b" stroke="#475569" strokeWidth="1.5" opacity="0.8" />
+
+          {/* Province dots */}
+          {Object.entries(PROVINCE_CENTERS).map(([province, center]) => {
+            const count = auctionCounts[province] || 0;
+            const r = getDotRadius(count);
+            const color = getDotColor(count);
+            const isHovered = hovered === province;
+
+            return (
+              <g
+                key={province}
+                onClick={() => handleClick(province)}
+                onMouseEnter={() => setHovered(province)}
+                onMouseLeave={() => setHovered(null)}
+                style={{ cursor: 'pointer' }}
+              >
+                {/* Glow effect on hover */}
+                {isHovered && (
+                  <circle cx={center.x} cy={center.y} r={r + 6} fill={color} opacity="0.2" />
+                )}
+                <circle
+                  cx={center.x}
+                  cy={center.y}
+                  r={r}
+                  fill={color}
+                  stroke={isHovered ? '#fff' : color}
+                  strokeWidth={isHovered ? 1.5 : 0.5}
+                  opacity={count === 0 ? 0.3 : 0.9}
+                />
+              </g>
+            );
+          })}
+
+          {/* Baleares outline */}
+          <ellipse cx="345" cy="155" rx="18" ry="12" fill="#1e293b" stroke="#475569" strokeWidth="1" opacity="0.8" />
+
+          {/* Canary Islands inset box */}
+          <rect x="55" y="260" width="110" height="40" rx="4" fill="none" stroke="#334155" strokeWidth="0.5" strokeDasharray="3,3" />
+          <text x="110" y="258" textAnchor="middle" fill="#64748b" fontSize="7">Canarias</text>
+
+          {/* Tooltip */}
+          {hovered && PROVINCE_CENTERS[hovered] && (
+            <g>
+              <rect
+                x={PROVINCE_CENTERS[hovered].x - 55}
+                y={PROVINCE_CENTERS[hovered].y - 32}
+                width="110"
+                height="22"
+                rx="4"
+                fill="#1e293b"
+                stroke="#475569"
+                strokeWidth="0.5"
+              />
+              <text
+                x={PROVINCE_CENTERS[hovered].x}
+                y={PROVINCE_CENTERS[hovered].y - 18}
+                textAnchor="middle"
+                fill="#e2e8f0"
+                fontSize="9"
+                fontWeight="600"
+              >
+                {PROVINCE_CENTERS[hovered].name}: {auctionCounts[hovered] || 0} subastas
+              </text>
+            </g>
+          )}
+        </svg>
+      </div>
+
+      {/* Legend */}
+      <div className="flex justify-center gap-6 mt-2 text-xs text-slate-500">
+        <div className="flex items-center gap-1.5">
+          <span className="inline-block w-2 h-2 rounded-full bg-gray-600"></span> Sin datos
         </div>
-      )}
+        <div className="flex items-center gap-1.5">
+          <span className="inline-block w-3 h-3 rounded-full bg-violet-700"></span> Pocas
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="inline-block w-4 h-4 rounded-full bg-violet-400"></span> Muchas
+        </div>
+      </div>
     </div>
   );
 }

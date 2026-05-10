@@ -7,7 +7,8 @@ import FilterPanel from '@/components/FilterPanel';
 import AlertForm from '@/components/AlertForm';
 import AuctionCard, { AuctionCardSkeleton } from '@/components/AuctionCard';
 import dynamic from 'next/dynamic';
-import { Auction, AuctionFilters, AuctionsResponse } from '@/lib/types';
+import { Auction, AuctionFilters } from '@/lib/types';
+import { normalize } from '@/lib/utils';
 
 // Dynamic import for AuctionMap to avoid SSR issues with Leaflet
 const AuctionMap = dynamic(() => import('@/components/AuctionMap'), { ssr: false });
@@ -53,49 +54,61 @@ export default function BuscarContent() {
   }, [searchParams]);
 
   const filters = buildFilters();
+  const currentPage = filters.page || 1;
 
   // Fetch auctions
   useEffect(() => {
     setLoading(true);
-    const params = new URLSearchParams();
-    Object.entries(filters).forEach(([k, v]) => {
-      if (v != null && v !== '') params.set(k, String(v));
-    });
 
-    // Fetch static data
     fetch('/subastas/data.json')
       .then((r) => r.json())
       .then((json) => {
-        let filtered = [...(json.auctions || [])];
+        let filtered: Auction[] = [...(json.auctions || [])];
 
-        // Apply filters
-        if (filters.provincia) filtered = filtered.filter((a: any) => a.provincia === filters.provincia);
-        if (filters.tipo_bien) filtered = filtered.filter((a: any) => a.tipo_bien === filters.tipo_bien);
-        if (filters.source) filtered = filtered.filter((a: any) => a.source === filters.source);
-        if (filters.estado) filtered = filtered.filter((a: any) => a.estado === filters.estado);
-        if (filters.precio_min) filtered = filtered.filter((a: any) => a.valor_subasta >= Number(filters.precio_min));
-        if (filters.precio_max) filtered = filtered.filter((a: any) => a.valor_subasta <= Number(filters.precio_max));
+        // Apply filters (case-insensitive with accent normalization)
+        if (filters.provincia) {
+          const fp = normalize(filters.provincia);
+          filtered = filtered.filter((a) => normalize(a.provincia) === fp);
+        }
+        if (filters.tipo_bien) {
+          const ft = normalize(filters.tipo_bien);
+          filtered = filtered.filter((a) => normalize(a.tipo_bien) === ft);
+        }
+        if (filters.source) {
+          const fs = normalize(filters.source);
+          filtered = filtered.filter((a) => normalize(a.source) === fs);
+        }
+        if (filters.estado) {
+          const fe = normalize(filters.estado);
+          filtered = filtered.filter((a) => normalize(a.estado) === fe);
+        }
+        if (filters.precio_min) filtered = filtered.filter((a) => a.valor_subasta >= Number(filters.precio_min));
+        if (filters.precio_max) filtered = filtered.filter((a) => a.valor_subasta <= Number(filters.precio_max));
         if (filters.query) {
           const q = filters.query.toLowerCase();
-          filtered = filtered.filter((a: any) =>
-            (a.titulo||'').toLowerCase().includes(q) || a.municipio.toLowerCase().includes(q) ||
-            a.direccion.toLowerCase().includes(q) || a.provincia.toLowerCase().includes(q)
+          filtered = filtered.filter((a) =>
+            (a.titulo || '').toLowerCase().includes(q) ||
+            (a.municipio || '').toLowerCase().includes(q) ||
+            (a.direccion || '').toLowerCase().includes(q) ||
+            (a.provincia || '').toLowerCase().includes(q) ||
+            (a.descripcion || '').toLowerCase().includes(q)
           );
         }
 
         // Sort
         const sort = filters.sort || '';
-        if (sort === 'precio_asc') filtered.sort((a: any, b: any) => a.valor_subasta - b.valor_subasta);
-        else if (sort === 'precio_desc') filtered.sort((a: any, b: any) => b.valor_subasta - a.valor_subasta);
-        else if (sort === 'fecha_fin_asc') filtered.sort((a: any, b: any) => a.fecha_fin.localeCompare(b.fecha_fin));
+        if (sort === 'precio_asc') filtered.sort((a, b) => a.valor_subasta - b.valor_subasta);
+        else if (sort === 'precio_desc') filtered.sort((a, b) => b.valor_subasta - a.valor_subasta);
+        else if (sort === 'fecha_fin_asc') filtered.sort((a, b) => a.fecha_fin.localeCompare(b.fecha_fin));
+        else if (sort === 'fecha_fin_desc') filtered.sort((a, b) => b.fecha_fin.localeCompare(a.fecha_fin));
+        else if (sort === 'fecha_pub_desc') filtered.sort((a, b) => b.created_at.localeCompare(a.created_at));
 
-        const total = filtered.length;
-        const limit = 20;
-        const totalPages = Math.ceil(total / limit);
-        const start = (currentPage - 1) * limit;
-        setAuctions(filtered.slice(start, start + limit));
-        setTotal(total);
-        setTotalPages(totalPages);
+        const totalCount = filtered.length;
+        const pages = Math.ceil(totalCount / PAGE_SIZE);
+        const start = (currentPage - 1) * PAGE_SIZE;
+        setAuctions(filtered.slice(start, start + PAGE_SIZE));
+        setTotal(totalCount);
+        setTotalPages(pages);
       })
       .catch(() => {
         setAuctions([]);
@@ -135,8 +148,6 @@ export default function BuscarContent() {
   const activeFilterCount = Object.entries(filters).filter(
     ([k, v]) => v != null && v !== '' && k !== 'page' && k !== 'sort'
   ).length;
-
-  const currentPage = filters.page || 1;
 
   // Pagination range
   const getPageNumbers = () => {

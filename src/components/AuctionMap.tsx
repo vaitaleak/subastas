@@ -86,7 +86,7 @@ export default function AuctionMap({ auctions }: AuctionMapProps) {
           <div style="font-weight:600;margin-bottom:4px;">${auction.titulo || auction.tipo_bien}</div>
           <div style="font-size:13px;color:#94a3b8;">${auction.provincia}, ${auction.municipio}</div>
           <div style="font-size:15px;font-weight:700;color:#8b5cf6;margin-top:6px;">${formatPrice(auction.valor_subasta)}</div>
-          <a href="/subastas/subasta/${auction.id}" style="color:#8b5cf6;font-size:12px;">Ver detalle →</a>
+          <a href="/subastas/subasta/${auction.id}/" style="color:#8b5cf6;font-size:12px;">Ver detalle →</a>
         </div>
       `);
       markerGroup.addLayer(marker);

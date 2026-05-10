@@ -104,8 +104,8 @@ export default function RootLayout({
                 <ul className="space-y-2 text-sm">
                   <li><Link href="/" className="text-slate-500 hover:text-accent-400 transition-colors">Inicio</Link></li>
                   <li><Link href="/buscar" className="text-slate-500 hover:text-accent-400 transition-colors">Buscar subastas</Link></li>
-                  <li><Link href="/buscar?tipo_bien=vivienda" className="text-slate-500 hover:text-accent-400 transition-colors">Viviendas</Link></li>
-                  <li><Link href="/buscar?tipo_bien=garaje" className="text-slate-500 hover:text-accent-400 transition-colors">Garajes</Link></li>
+                  <li><Link href="/buscar?tipo_bien=Vivienda" className="text-slate-500 hover:text-accent-400 transition-colors">Viviendas</Link></li>
+                  <li><Link href="/buscar?tipo_bien=Garaje" className="text-slate-500 hover:text-accent-400 transition-colors">Garajes</Link></li>
                 </ul>
               </div>
               <div>

@@ -23,20 +23,20 @@ export default function AlertForm({ prefilledFilters, onSuccess }: AlertFormProp
     setError('');
 
     try {
-      const res = await fetch('/api/alerts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email,
-          filters: prefilledFilters || {},
-          frequency,
-        }),
+      // Simulate API call (no backend in static export)
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      
+      // Store alert in localStorage for demo purposes
+      const alerts = JSON.parse(localStorage.getItem('subastas_alerts') || '[]');
+      alerts.push({
+        id: Date.now().toString(),
+        email,
+        filters: prefilledFilters || {},
+        frequency,
+        active: true,
+        created_at: new Date().toISOString(),
       });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Error al crear la alerta');
-      }
+      localStorage.setItem('subastas_alerts', JSON.stringify(alerts));
 
       setSuccess(true);
       setEmail('');
@@ -51,8 +51,8 @@ export default function AlertForm({ prefilledFilters, onSuccess }: AlertFormProp
   if (success) {
     return (
       <div className="card-static p-5 text-center space-y-3 animate-fade-in">
-        <div className="w-12 h-12 mx-auto rounded-full bg-success-500/10 border border-success-500/20 flex items-center justify-center">
-          <svg className="w-6 h-6 text-success-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <div className="w-12 h-12 mx-auto rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+          <svg className="w-6 h-6 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
         </div>

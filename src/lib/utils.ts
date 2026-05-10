@@ -1,5 +1,14 @@
 import { Auction } from './types';
 
+// ─── Normalize string for comparison ────────────────────────────────────────
+export function normalize(str: string): string {
+  return str
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')   // strip accents
+    .trim();
+}
+
 // ─── Price formatting ───────────────────────────────────────────────────────
 export function formatPrice(num: number | null | undefined): string {
   if (num == null) return '—';
@@ -77,6 +86,7 @@ export function getProvinceName(code: string): string {
 export const PROVINCE_LIST = Object.entries(PROVINCES).map(([code, name]) => ({ code, name }));
 
 // ─── Tipo de bien ───────────────────────────────────────────────────────────
+// Data values are the display names (e.g. "Vivienda", "Vehículo", "Finca rústica")
 const TIPO_BIEN: Record<string, string> = {
   vivienda: 'Vivienda',
   garaje: 'Garaje',
@@ -92,10 +102,22 @@ const TIPO_BIEN: Record<string, string> = {
 };
 
 export function getTipoBienLabel(tipo: string): string {
-  return TIPO_BIEN[tipo] || tipo;
+  // tipo may already be the display name from data.json
+  if (TIPO_BIEN[tipo]) return TIPO_BIEN[tipo];
+  // Check if it's a display name already (return as-is)
+  return tipo;
 }
 
+// Return list with display names as values (matching data.json values)
 export const TIPO_BIEN_LIST = Object.entries(TIPO_BIEN).map(([value, label]) => ({ value, label }));
+
+// ─── Match tipo_bien with normalization ──────────────────────────────────────
+export function matchTipoBien(auctionTipo: string, filterTipo: string): boolean {
+  // Exact match first
+  if (auctionTipo === filterTipo) return true;
+  // Normalize both sides
+  return normalize(auctionTipo) === normalize(filterTipo);
+}
 
 // ─── Source ─────────────────────────────────────────────────────────────────
 const SOURCES: Record<string, string> = {
@@ -146,19 +168,25 @@ export function debounce<T extends (...args: unknown[]) => void>(fn: T, ms: numb
 
 // ─── Icon for tipo_bien ─────────────────────────────────────────────────────
 export function getTipoBienIcon(tipo: string): string {
+  const n = normalize(tipo);
   const icons: Record<string, string> = {
     vivienda: '🏠',
     garaje: '🅿️',
     solar: '🏗️',
-    finca_rustica: '🌾',
+    finca rustica: '🌾',
+    'finca rústica': '🌾',
+    'local comercial': '🏪',
     local: '🏪',
+    'nave industrial': '🏭',
     nave: '🏭',
     vehiculo: '🚗',
+    'vehículo': '🚗',
     oficina: '🏢',
     trastero: '📦',
-    nave_almacen: '🏭',
+    'nave/almacen': '🏭',
+    'nave/almacén': '🏭',
   };
-  return icons[tipo] || '📋';
+  return icons[tipo] || icons[n] || '📋';
 }
 
 // ─── Truncate text ──────────────────────────────────────────────────────────
