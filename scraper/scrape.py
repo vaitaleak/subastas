@@ -103,12 +103,16 @@ def scrape_boe():
                 if offset != 0:
                     ranges_to_probe.add(f"{prefix}-{num + offset:06d}")
 
-    # Add sequential probes for current year
+    # Small sequential probe around highest known ID
     import datetime as dt
     year = dt.datetime.now().year
-    for num in range(255000, 265000, 10):
+    max_ja = max((int(m.group(2)) for sid in existing_ids 
+                  if (m := re.match(r"SUB-JA-\d+-(\d+)", sid))), default=262000)
+    for num in range(max_ja - 5, max_ja + 50):
         ranges_to_probe.add(f"SUB-JA-{year}-{num:06d}")
-    for num in range(100, 500, 10):
+    max_rc = max((int(m.group(2)) for sid in existing_ids 
+                  if (m := re.match(r"SUB-RC-\d+-(\d+)", sid))), default=100)
+    for num in range(max_rc - 5, max_rc + 20):
         ranges_to_probe.add(f"SUB-RC-{year}-{num:06d}")
 
     all_probe_ids = existing_ids | ranges_to_probe
