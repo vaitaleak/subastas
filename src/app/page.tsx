@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import SearchBar from '@/components/SearchBar';
 import StatsBar from '@/components/StatsBar';
 import AuctionCard from '@/components/AuctionCard';
+import SpainMap from '@/components/SpainMap';
 import { Auction, AuctionsResponse } from '@/lib/types';
 import { getTipoBienLabel } from '@/lib/utils';
 
@@ -51,6 +52,8 @@ const STEPS = [
 export default function HomePage() {
   const [featured, setFeatured] = useState<Auction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [auctionCounts, setAuctionCounts] = useState<Record<string, number>>({});
+  const [statsData, setStatsData] = useState<{ totalActive: number; newToday: number } | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -61,6 +64,16 @@ export default function HomePage() {
       })
       .catch(() => setFeatured([]))
       .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    fetch('/api/stats')
+      .then((r) => r.json())
+      .then((data) => {
+        setAuctionCounts(data.totalByProvince || {});
+        setStatsData({ totalActive: data.totalActive || 0, newToday: data.newToday || 0 });
+      })
+      .catch(() => {});
   }, []);
 
   const handleSearch = (query: string) => {
@@ -159,18 +172,12 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ─── Map placeholder ─────────────────────────────────────────────── */}
+      {/* ─── Map section ─────────────────────────────────────────────────── */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <h2 className="section-title mb-2">Mapa de subastas</h2>
-        <p className="section-subtitle mb-6">Explora subastas por provincia</p>
+        <p className="section-subtitle mb-6">Haz clic en una provincia para ver sus subastas</p>
         <div className="map-container h-80 md:h-[450px]">
-          <div className="text-center">
-            <svg className="w-16 h-16 mx-auto text-slate-700 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-            </svg>
-            <p className="text-slate-600 font-medium">Mapa de subastas por provincia</p>
-            <p className="text-sm text-slate-700 mt-1">Próximamente</p>
-          </div>
+          <SpainMap auctionCounts={auctionCounts} />
         </div>
       </section>
 

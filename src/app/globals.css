@@ -2,6 +2,40 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Leaflet map styles ──────────────────────────────────────────────────── */
+@import 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+@import 'https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css';
+@import 'https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css';
+
+.leaflet-container {
+  background: #0f172a !important;
+}
+
+.leaflet-popup-content-wrapper {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+}
+
+.leaflet-popup-tip {
+  background: #1e293b !important;
+}
+
+.leaflet-popup-close-button {
+  color: #94a3b8 !important;
+}
+
+.leaflet-control-zoom a {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-color: #334155 !important;
+}
+
+.leaflet-control-zoom a:hover {
+  background: #334155 !important;
+}
+
 /* ─── Base ─────────────────────────────────────────────────────────────────── */
 @layer base {
   * {

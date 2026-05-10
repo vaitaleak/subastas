@@ -6,7 +6,11 @@ import SearchBar from '@/components/SearchBar';
 import FilterPanel from '@/components/FilterPanel';
 import AlertForm from '@/components/AlertForm';
 import AuctionCard, { AuctionCardSkeleton } from '@/components/AuctionCard';
+import dynamic from 'next/dynamic';
 import { Auction, AuctionFilters, AuctionsResponse } from '@/lib/types';
+
+// Dynamic import for AuctionMap to avoid SSR issues with Leaflet
+const AuctionMap = dynamic(() => import('@/components/AuctionMap'), { ssr: false });
 
 const PAGE_SIZE = 20;
 
@@ -20,6 +24,7 @@ export default function BuscarPage() {
   const [loading, setLoading] = useState(true);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [showAlertForm, setShowAlertForm] = useState(false);
+  const [showMap, setShowMap] = useState(false);
 
   // Build filters from URL search params
   const buildFilters = useCallback((): AuctionFilters => {
@@ -159,6 +164,17 @@ export default function BuscarPage() {
           </svg>
           Alerta
         </button>
+        <button
+          onClick={() => setShowMap(!showMap)}
+          className={`flex items-center gap-1.5 px-4 py-2.5 bg-navy-800 border rounded-lg text-sm transition-colors ${
+            showMap ? 'border-accent-500 text-accent-400' : 'border-navy-600 text-slate-300 hover:border-accent-500/50'
+          }`}
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+          </svg>
+          {showMap ? 'Lista' : 'Mapa'}
+        </button>
       </div>
 
       <div className="flex gap-6">
@@ -209,35 +225,46 @@ export default function BuscarPage() {
             </div>
           )}
 
+          {/* Map view */}
+          {showMap && !loading && auctions.length > 0 && (
+            <div className="mb-6 h-[400px] md:h-[500px]">
+              <AuctionMap auctions={auctions} />
+            </div>
+          )}
+
           {/* Auction grid */}
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <AuctionCardSkeleton key={i} />
-              ))}
-            </div>
-          ) : auctions.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {auctions.map((auction) => (
-                <AuctionCard key={auction.id} auction={auction} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-16">
-              <svg className="w-16 h-16 mx-auto text-slate-700 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <h3 className="text-lg font-semibold text-slate-400 mb-2">No se encontraron subastas</h3>
-              <p className="text-sm text-slate-600 mb-6">
-                Prueba a modificar los filtros o busca con otros términos.
-              </p>
-              <button
-                onClick={() => updateFilters({ page: 1 })}
-                className="btn-secondary text-sm"
-              >
-                Limpiar filtros
-              </button>
-            </div>
+          {!showMap && (
+            <>
+              {loading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <AuctionCardSkeleton key={i} />
+                  ))}
+                </div>
+              ) : auctions.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {auctions.map((auction) => (
+                    <AuctionCard key={auction.id} auction={auction} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-16">
+                  <svg className="w-16 h-16 mx-auto text-slate-700 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <h3 className="text-lg font-semibold text-slate-400 mb-2">No se encontraron subastas</h3>
+                  <p className="text-sm text-slate-600 mb-6">
+                    Prueba a modificar los filtros o busca con otros términos.
+                  </p>
+                  <button
+                    onClick={() => updateFilters({ page: 1 })}
+                    className="btn-secondary text-sm"
+                  >
+                    Limpiar filtros
+                  </button>
+                </div>
+              )}
+            </>
           )}
 
           {/* Pagination */}
