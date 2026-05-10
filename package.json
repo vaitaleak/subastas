@@ -5,34 +5,20 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
-    "scrape": "tsx src/lib/scraper-manager.ts",
-    "scrape:boe": "tsx src/lib/scrapers/boe.ts",
-    "scrape:hacienda": "tsx src/lib/scrapers/hacienda.ts",
-    "scrape:ss": "tsx src/lib/scrapers/seguridad-social.ts",
-    "seed": "tsx src/scripts/seed.ts",
-    "postinstall": "echo 'Run npm run seed to generate sample data'"
+    "start": "next start"
   },
   "dependencies": {
     "next": "^14.2.15",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "cheerio": "^1.0.0",
-    "node-cron": "^3.0.3",
-    "nodemailer": "^6.9.15",
-    "better-sqlite3": "^11.5.0",
     "leaflet": "^1.9.4",
-    "react-leaflet": "^4.2.1",
-    "leaflet.markercluster": "^1.5.3"
+    "react-leaflet": "^4.2.1"
   },
   "devDependencies": {
-    "@types/nodemailer": "^6.4.16",
-    "@types/better-sqlite3": "^7.6.11",
     "@types/leaflet": "^1.9.8",
     "@types/node": "^22.9.0",
     "@types/react": "^18.3.12",
     "typescript": "^5.6.3",
-    "tsx": "^4.19.2",
     "tailwindcss": "^3.4.1",
     "postcss": "^8.4.31",
     "autoprefixer": "^10.4.16",
