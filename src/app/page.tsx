@@ -57,9 +57,9 @@ export default function HomePage() {
   const router = useRouter();
 
   useEffect(() => {
-    fetch('/api/auctions?estado=activa&page=1&sort=fecha_pub_desc')
+    fetch('/data.json')
       .then((r) => r.json())
-      .then((data: AuctionsResponse) => {
+      .then((data) => {
         setFeatured((data.auctions || []).slice(0, 6));
       })
       .catch(() => setFeatured([]))
@@ -67,11 +67,11 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    fetch('/api/stats')
+    fetch('/data.json')
       .then((r) => r.json())
       .then((data) => {
-        setAuctionCounts(data.totalByProvince || {});
-        setStatsData({ totalActive: data.totalActive || 0, newToday: data.newToday || 0 });
+        setAuctionCounts(data.stats.totalByProvince || {});
+        setStatsData({ totalActive: data.stats.totalActive || 0, newToday: data.stats.newToday || 0 });
       })
       .catch(() => {});
   }, []);

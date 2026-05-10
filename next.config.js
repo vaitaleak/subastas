@@ -1,7 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone',
-  serverExternalPackages: ['better-sqlite3'],
+  output: 'export',
+  images: {
+    unoptimized: true,
+  },
+  basePath: '/subastas',
+  trailingSlash: true,
 };
 
 module.exports = nextConfig;

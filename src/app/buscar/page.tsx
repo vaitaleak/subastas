@@ -62,12 +62,40 @@ export default function BuscarPage() {
       if (v != null && v !== '') params.set(k, String(v));
     });
 
-    fetch(`/api/auctions?${params.toString()}`)
+    // Fetch static data
+    fetch('/data.json')
       .then((r) => r.json())
-      .then((data: AuctionsResponse) => {
-        setAuctions(data.auctions || []);
-        setTotal(data.total || 0);
-        setTotalPages(data.totalPages || 0);
+      .then((json) => {
+        let filtered = [...(json.auctions || [])];
+
+        // Apply filters
+        if (filters.provincia) filtered = filtered.filter((a: any) => a.provincia === filters.provincia);
+        if (filters.tipo_bien) filtered = filtered.filter((a: any) => a.tipo_bien === filters.tipo_bien);
+        if (filters.source) filtered = filtered.filter((a: any) => a.source === filters.source);
+        if (filters.estado) filtered = filtered.filter((a: any) => a.estado === filters.estado);
+        if (filters.precio_min) filtered = filtered.filter((a: any) => a.valor_subasta >= Number(filters.precio_min));
+        if (filters.precio_max) filtered = filtered.filter((a: any) => a.valor_subasta <= Number(filters.precio_max));
+        if (filters.query) {
+          const q = filters.query.toLowerCase();
+          filtered = filtered.filter((a: any) =>
+            (a.titulo||'').toLowerCase().includes(q) || a.municipio.toLowerCase().includes(q) ||
+            a.direccion.toLowerCase().includes(q) || a.provincia.toLowerCase().includes(q)
+          );
+        }
+
+        // Sort
+        const sort = filters.sort || '';
+        if (sort === 'precio_asc') filtered.sort((a: any, b: any) => a.valor_subasta - b.valor_subasta);
+        else if (sort === 'precio_desc') filtered.sort((a: any, b: any) => b.valor_subasta - a.valor_subasta);
+        else if (sort === 'fecha_fin_asc') filtered.sort((a: any, b: any) => a.fecha_fin.localeCompare(b.fecha_fin));
+
+        const total = filtered.length;
+        const limit = 20;
+        const totalPages = Math.ceil(total / limit);
+        const start = (currentPage - 1) * limit;
+        setAuctions(filtered.slice(start, start + limit));
+        setTotal(total);
+        setTotalPages(totalPages);
       })
       .catch(() => {
         setAuctions([]);

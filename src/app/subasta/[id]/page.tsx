@@ -30,11 +30,10 @@ export default function SubastaDetailPage() {
   useEffect(() => {
     if (!id) return;
     setLoading(true);
-    fetch(`/api/auctions?query=${encodeURIComponent(id)}`)
+    fetch('/data.json')
       .then((r) => r.json())
-      .then((data: AuctionsResponse) => {
-        // Try to find exact match
-        const found = (data.auctions || []).find((a) => a.id === id || a.source_id === id);
+      .then((json: any) => {
+        const found = (json.auctions || []).find((a: any) => String(a.id) === id || a.source_id === id);
         if (found) {
           setAuction(found);
         } else {
@@ -53,14 +52,13 @@ export default function SubastaDetailPage() {
     if (auction.tipo_bien) params.set('tipo_bien', auction.tipo_bien);
     params.set('page', '1');
 
-    fetch(`/api/auctions?${params.toString()}`)
+    fetch('/data.json')
       .then((r) => r.json())
-      .then((data: AuctionsResponse) => {
-        setRelated(
-          (data.auctions || [])
-            .filter((a) => a.id !== auction.id)
-            .slice(0, 4)
-        );
+      .then((json: any) => {
+        let filtered = json.auctions || [];
+        if (auction.provincia) filtered = filtered.filter((a: any) => a.provincia === auction.provincia);
+        if (auction.tipo_bien) filtered = filtered.filter((a: any) => a.tipo_bien === auction.tipo_bien);
+        setRelated(filtered.filter((a: any) => a.id !== auction.id).slice(0, 4));
       })
       .catch(() => setRelated([]));
   }, [auction?.id, auction?.provincia, auction?.tipo_bien]);
@@ -345,4 +343,12 @@ function DetailRow({ icon, label, value }: { icon: string; label: string; value?
       </div>
     </div>
   );
+}
+
+
+// Generate static pages for all auctions
+export async function generateStaticParams() {
+  const res = await fetch('file://' + process.cwd() + '/public/data.json');
+  // Fallback: just generate first 100 pages
+  return Array.from({ length: 350 }, (_, i) => ({ id: String(i + 1) }));
 }
