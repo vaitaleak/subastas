@@ -121,7 +121,7 @@ export function matchTipoBien(auctionTipo: string, filterTipo: string): boolean 
 
 // ─── Source ─────────────────────────────────────────────────────────────────
 const SOURCES: Record<string, string> = {
-  boe: 'BOE Judicial',
+  judicial: 'BOE Judicial',
   hacienda: 'Agencia Tributaria',
   seguridad_social: 'Seguridad Social',
 };

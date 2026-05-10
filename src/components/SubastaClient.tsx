@@ -126,7 +126,7 @@ export default function SubastaDetailPage() {
   const tipoIcon = getTipoBienIcon(auction.tipo_bien);
   const sourceLabel = getSourceLabel(auction.source);
   const sourceClass =
-    auction.source === 'boe'
+    auction.source === 'judicial'
       ? 'source-boe'
       : auction.source === 'hacienda'
       ? 'source-hacienda'
